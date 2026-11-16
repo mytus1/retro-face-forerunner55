@@ -1,0 +1,236 @@
+<!--
+    Everything the user can configure.
+
+    <properties> are the stored values and their defaults.
+    <settings>   describes the screen shown in Garmin Connect / Connect IQ on the phone
+                 (only available when the face is installed through the Connect IQ Store).
+    The same options are also offered in an on-watch menu - see source/Settings.mc.
+
+    Colours are stored as an index into the display's 8 colour palette:
+    0 Black, 1 White, 2 Red, 3 Yellow, 4 Green, 5 Cyan, 6 Blue, 7 Magenta
+-->
+<resources>
+    <properties>
+        <property id="Theme" type="number">1</property>
+        <property id="ColorBackground" type="number">0</property>
+        <property id="ColorHours" type="number">1</property>
+        <property id="ColorMinutes" type="number">1</property>
+        <property id="ColorDate" type="number">3</property>
+        <property id="ColorValues" type="number">1</property>
+        <property id="ColorLabels" type="number">3</property>
+        <property id="ColorLines" type="number">3</property>
+        <property id="ColorRing" type="number">1</property>
+        <property id="ColorAccent" type="number">3</property>
+        <property id="FieldTopLeft" type="number">2</property>
+        <property id="FieldTopRight" type="number">1</property>
+        <property id="FieldBottomLeft" type="number">4</property>
+        <property id="FieldBottomRight" type="number">5</property>
+        <property id="RingMode" type="number">1</property>
+        <property id="BarMode" type="number">2</property>
+        <property id="ShowSeconds" type="boolean">true</property>
+    </properties>
+
+    <settings>
+        <setting propertyKey="@Properties.Theme" title="@Strings.PhoneTheme">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.ThemeCustom</listEntry>
+                <listEntry value="1">@Strings.ThemeAmber</listEntry>
+                <listEntry value="2">@Strings.ThemeIce</listEntry>
+                <listEntry value="3">@Strings.ThemePhosphor</listEntry>
+                <listEntry value="4">@Strings.ThemeRedline</listEntry>
+                <listEntry value="5">@Strings.ThemeSynthwave</listEntry>
+                <listEntry value="6">@Strings.ThemeMono</listEntry>
+                <listEntry value="7">@Strings.ThemeDaylight</listEntry>
+                <listEntry value="8">@Strings.ThemeBlueprint</listEntry>
+                <listEntry value="9">@Strings.ThemeSodium</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorBackground" title="@Strings.PhoneColorBackground">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorHours" title="@Strings.PhoneColorHours">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorMinutes" title="@Strings.PhoneColorMinutes">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorDate" title="@Strings.PhoneColorDate">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorValues" title="@Strings.PhoneColorValues">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorLabels" title="@Strings.PhoneColorLabels">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorLines" title="@Strings.PhoneColorLines">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorRing" title="@Strings.PhoneColorRing">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ColorAccent" title="@Strings.PhoneColorAccent">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.Black</listEntry>
+                <listEntry value="1">@Strings.White</listEntry>
+                <listEntry value="2">@Strings.Red</listEntry>
+                <listEntry value="3">@Strings.Yellow</listEntry>
+                <listEntry value="4">@Strings.Green</listEntry>
+                <listEntry value="5">@Strings.Cyan</listEntry>
+                <listEntry value="6">@Strings.Blue</listEntry>
+                <listEntry value="7">@Strings.Magenta</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.FieldTopLeft" title="@Strings.PhoneFieldTopLeft">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.FieldNone</listEntry>
+                <listEntry value="1">@Strings.FieldSteps</listEntry>
+                <listEntry value="2">@Strings.FieldHeart</listEntry>
+                <listEntry value="3">@Strings.FieldBattery</listEntry>
+                <listEntry value="4">@Strings.FieldDistance</listEntry>
+                <listEntry value="5">@Strings.FieldCalories</listEntry>
+                <listEntry value="6">@Strings.FieldActive</listEntry>
+                <listEntry value="7">@Strings.FieldAlerts</listEntry>
+                <listEntry value="8">@Strings.FieldTemp</listEntry>
+                <listEntry value="9">@Strings.FieldSun</listEntry>
+                <listEntry value="10">@Strings.FieldRecovery</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.FieldTopRight" title="@Strings.PhoneFieldTopRight">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.FieldNone</listEntry>
+                <listEntry value="1">@Strings.FieldSteps</listEntry>
+                <listEntry value="2">@Strings.FieldHeart</listEntry>
+                <listEntry value="3">@Strings.FieldBattery</listEntry>
+                <listEntry value="4">@Strings.FieldDistance</listEntry>
+                <listEntry value="5">@Strings.FieldCalories</listEntry>
+                <listEntry value="6">@Strings.FieldActive</listEntry>
+                <listEntry value="7">@Strings.FieldAlerts</listEntry>
+                <listEntry value="8">@Strings.FieldTemp</listEntry>
+                <listEntry value="9">@Strings.FieldSun</listEntry>
+                <listEntry value="10">@Strings.FieldRecovery</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.FieldBottomLeft" title="@Strings.PhoneFieldBottomLeft">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.FieldNone</listEntry>
+                <listEntry value="1">@Strings.FieldSteps</listEntry>
+                <listEntry value="2">@Strings.FieldHeart</listEntry>
+                <listEntry value="3">@Strings.FieldBattery</listEntry>
+                <listEntry value="4">@Strings.FieldDistance</listEntry>
+                <listEntry value="5">@Strings.FieldCalories</listEntry>
+                <listEntry value="6">@Strings.FieldActive</listEntry>
+                <listEntry value="7">@Strings.FieldAlerts</listEntry>
+                <listEntry value="8">@Strings.FieldTemp</listEntry>
+                <listEntry value="9">@Strings.FieldSun</listEntry>
+                <listEntry value="10">@Strings.FieldRecovery</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.FieldBottomRight" title="@Strings.PhoneFieldBottomRight">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.FieldNone</listEntry>
+                <listEntry value="1">@Strings.FieldSteps</listEntry>
+                <listEntry value="2">@Strings.FieldHeart</listEntry>
+                <listEntry value="3">@Strings.FieldBattery</listEntry>
+                <listEntry value="4">@Strings.FieldDistance</listEntry>
+                <listEntry value="5">@Strings.FieldCalories</listEntry>
+                <listEntry value="6">@Strings.FieldActive</listEntry>
+                <listEntry value="7">@Strings.FieldAlerts</listEntry>
+                <listEntry value="8">@Strings.FieldTemp</listEntry>
+                <listEntry value="9">@Strings.FieldSun</listEntry>
+                <listEntry value="10">@Strings.FieldRecovery</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.RingMode" title="@Strings.PhoneRing">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.GaugeOff</listEntry>
+                <listEntry value="1">@Strings.GaugeSteps</listEntry>
+                <listEntry value="2">@Strings.GaugeBattery</listEntry>
+                <listEntry value="3">@Strings.GaugeActive</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.BarMode" title="@Strings.PhoneBar">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.GaugeOff</listEntry>
+                <listEntry value="1">@Strings.GaugeSteps</listEntry>
+                <listEntry value="2">@Strings.GaugeBattery</listEntry>
+                <listEntry value="3">@Strings.GaugeActive</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.ShowSeconds" title="@Strings.PhoneSeconds">
+            <settingConfig type="boolean"/>
+        </setting>
+    </settings>
+</resources>

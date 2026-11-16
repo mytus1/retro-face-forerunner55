@@ -1,0 +1,13 @@
+# Build output (the ready-to-install files live in dist/)
+bin/
+*.prg.debug.xml
+
+# Your developer key signs your builds - never commit it
+*.der
+*.pem
+developer_key*
+
+# Editor / OS
+.vscode/
+.DS_Store
+__pycache__/

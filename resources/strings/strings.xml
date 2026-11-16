@@ -1,0 +1,91 @@
+<strings>
+    <string id="AppName">Apogee</string>
+
+    <!-- On-watch menu (kept short: the round screen clips long titles) -->
+    <string id="ThemeTitle">Theme</string>
+    <string id="ColorsTitle">Colours</string>
+    <string id="ColorTitle">Colour</string>
+    <string id="FieldsTitle">Data fields</string>
+    <string id="FieldsMenuTitle">Fields</string>
+    <string id="FieldTitle">Field</string>
+    <string id="RingTitle">Outer ring</string>
+    <string id="BarTitle">Bottom bar</string>
+    <string id="SecondsTitle">Seconds tick</string>
+
+    <!-- Phone settings screen (room for longer wording) -->
+    <string id="PhoneTheme">Theme (pick Custom to use the colours below)</string>
+    <string id="PhoneColorBackground">Custom colour: background</string>
+    <string id="PhoneColorHours">Custom colour: hours</string>
+    <string id="PhoneColorMinutes">Custom colour: minutes</string>
+    <string id="PhoneColorDate">Custom colour: date</string>
+    <string id="PhoneColorValues">Custom colour: data values</string>
+    <string id="PhoneColorLabels">Custom colour: data labels</string>
+    <string id="PhoneColorLines">Custom colour: divider lines</string>
+    <string id="PhoneColorRing">Custom colour: ring ticks</string>
+    <string id="PhoneColorAccent">Custom colour: accent (colon, lit ring, bar)</string>
+    <string id="PhoneFieldTopLeft">Data field: top left</string>
+    <string id="PhoneFieldTopRight">Data field: top right</string>
+    <string id="PhoneFieldBottomLeft">Data field: bottom left</string>
+    <string id="PhoneFieldBottomRight">Data field: bottom right</string>
+    <string id="PhoneRing">Outer ring shows</string>
+    <string id="PhoneBar">Bottom bar shows</string>
+    <string id="PhoneSeconds">Seconds tick on the ring when the watch is awake</string>
+
+    <!-- Themes -->
+    <string id="ThemeCustom">Custom</string>
+    <string id="ThemeAmber">Amber</string>
+    <string id="ThemeIce">Ice</string>
+    <string id="ThemePhosphor">Phosphor</string>
+    <string id="ThemeRedline">Redline</string>
+    <string id="ThemeSynthwave">Synthwave</string>
+    <string id="ThemeMono">Mono</string>
+    <string id="ThemeDaylight">Daylight</string>
+    <string id="ThemeBlueprint">Blueprint</string>
+    <string id="ThemeSodium">Sodium</string>
+
+    <!-- Colourable parts -->
+    <string id="ColorBackground">Background</string>
+    <string id="ColorHours">Hours</string>
+    <string id="ColorMinutes">Minutes</string>
+    <string id="ColorDate">Date</string>
+    <string id="ColorValues">Data values</string>
+    <string id="ColorLabels">Data labels</string>
+    <string id="ColorLines">Lines</string>
+    <string id="ColorRing">Ring ticks</string>
+    <string id="ColorAccent">Accent</string>
+
+    <!-- The eight colours the Forerunner 55 display can show -->
+    <string id="Black">Black</string>
+    <string id="White">White</string>
+    <string id="Red">Red</string>
+    <string id="Yellow">Yellow</string>
+    <string id="Green">Green</string>
+    <string id="Cyan">Cyan</string>
+    <string id="Blue">Blue</string>
+    <string id="Magenta">Magenta</string>
+
+    <!-- Field positions -->
+    <string id="FieldTopLeft">Top left</string>
+    <string id="FieldTopRight">Top right</string>
+    <string id="FieldBottomLeft">Bottom left</string>
+    <string id="FieldBottomRight">Bottom right</string>
+
+    <!-- Field types -->
+    <string id="FieldNone">Empty</string>
+    <string id="FieldSteps">Steps</string>
+    <string id="FieldHeart">Heart rate</string>
+    <string id="FieldBattery">Battery</string>
+    <string id="FieldDistance">Distance</string>
+    <string id="FieldCalories">Calories</string>
+    <string id="FieldActive">Intensity min</string>
+    <string id="FieldAlerts">Notifications</string>
+    <string id="FieldTemp">Temperature</string>
+    <string id="FieldSun">Sunrise/set</string>
+    <string id="FieldRecovery">Recovery hrs</string>
+
+    <!-- Gauges -->
+    <string id="GaugeOff">Nothing</string>
+    <string id="GaugeSteps">Step goal</string>
+    <string id="GaugeBattery">Battery</string>
+    <string id="GaugeActive">Intensity goal</string>
+</strings>

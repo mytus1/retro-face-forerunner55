@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!-- Apogee watch face for the Garmin Forerunner 55. -->
+<iq:manifest version="3" xmlns:iq="http://www.garmin.com/xml/connectiq">
+    <iq:application id="33ffafa3-1b52-40be-8e43-eac06d9a06fc" type="watchface" name="@Strings.AppName" entry="ApogeeApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.2.0">
+        <iq:products>
+            <iq:product id="fr55"/>
+        </iq:products>
+        <iq:permissions/>
+        <iq:languages>
+            <iq:language>eng</iq:language>
+        </iq:languages>
+        <iq:barrels/>
+    </iq:application>
+</iq:manifest>
