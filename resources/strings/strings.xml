@@ -12,6 +12,7 @@
     <string id="RingTitle">Outer ring</string>
     <string id="BarTitle">Bottom bar</string>
     <string id="SecondsTitle">Seconds tick</string>
+    <string id="ScanTitle">Scanlines</string>
 
     <!-- Phone settings screen (room for longer wording) -->
     <string id="PhoneTheme">Theme (pick Custom to use the colours below)</string>
@@ -34,6 +35,7 @@
     <string id="PhoneRing">Outer ring shows</string>
     <string id="PhoneBar">Bottom bar shows</string>
     <string id="PhoneSeconds">Seconds tick on the ring when the watch is awake</string>
+    <string id="PhoneScan">CRT scanlines through the time</string>
 
     <!-- Numeral styles -->
     <string id="StyleVhs">VHS</string>

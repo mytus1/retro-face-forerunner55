@@ -119,9 +119,9 @@ activity numbers temporarily hard-coded in a throwaway copy of the source.
 ## Ideas not done
 
 - Always-on seconds via `onPartialUpdate` (deliberately skipped: battery).
-- Aesthetic ideas offered to the owner, not yet chosen: CRT scanlines through
-  the time numerals, HUD corner brackets on the dividers, a blinking colon
-  while awake, a cleaner ring (no minute dots), a 'PLAY >' style VHS tag.
+- A 'PLAY >' style VHS tag was offered as a toggle and not chosen. Scanlines
+  (setting `Scanlines`), corner brackets, a blinking colon while awake and a
+  ring without minute dots were chosen and are in.
 - More data fields: alarms, do-not-disturb (glyphs `^` and `~` already exist
   in the label font), second time zone, humidity, feels-like temperature.
   Body battery and stress are not exposed to Connect IQ on this watch.

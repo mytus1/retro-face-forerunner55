@@ -43,11 +43,14 @@ const LINE_TOP_Y = 68;           // the two horizontal rules
 const LINE_BOTTOM_Y = 139;
 const LINE_LEFT_X = 24;
 const LINE_WIDTH = 160;
+const BRACKET = 4;               // length of the turned-in ends of the rules
 
 const TIME_Y = 76;               // top of the big numerals (they are 56 tall)
 const TIME_DIGIT_STEP = 38;      // numeral width (32) + gap (6)
 const TIME_COLON_STEP = 14;      // colon width (8) + gap (6)
 const TIME_GAP = 6;
+const TIME_HEIGHT = 56;
+const SCANLINE_STEP = 4;         // every 4th pixel row of the time is left dark
 
 const BAR_Y = 184;               // bottom bar: 10 segments
 const BAR_X = 80;
@@ -88,6 +91,7 @@ class ApogeeView extends WatchUi.WatchFace {
     private var _ringMode as Number = Data.GAUGE_STEPS;
     private var _barMode as Number = Data.GAUGE_BATTERY;
     private var _showSeconds as Boolean = true;
+    private var _scanlines as Boolean = true;
 
     // The heart-rate trace is worked out once a minute, not on every redraw.
     private var _trace as Array<Float>?;
@@ -149,6 +153,7 @@ class ApogeeView extends WatchUi.WatchFace {
         _barMode = Config.getNumber("BarMode", Data.BAR_HEART_TRACE);
         _traceMinute = -1;
         _showSeconds = Config.getBool("ShowSeconds", true);
+        _scanlines = Config.getBool("Scanlines", true);
     }
 
     //! Called when the face comes back on screen, e.g. after the settings menu.
@@ -195,8 +200,8 @@ class ApogeeView extends WatchUi.WatchFace {
     // Outer ring
     // ---------------------------------------------------------------------
 
-    //! 60 ticks around the edge.  Lit ticks (long, accent colour) show the
-    //! ring gauge; the rest are dots with a short dash every five.
+    //! 60 positions around the edge.  Lit ticks (long, accent colour) show
+    //! the ring gauge; past them only the twelve hour marks are drawn.
     //! second: 0-59 to show the seconds marker, or -1 to hide it.
     private function drawRing(dc as Dc, second as Number) as Void {
         var lit = (Data.gauge(_ringMode) * 60 + 0.5).toNumber();
@@ -208,15 +213,8 @@ class ApogeeView extends WatchUi.WatchFace {
         }
 
         dc.setColor(_colors[Config.PART_RING], Graphics.COLOR_TRANSPARENT);
-        for (var i = lit; i < 60; i++) {
-            if (i % 5 == 0) {
-                drawTick(dc, i, 99.0, 102.5);
-            } else {
-                dc.fillRectangle(
-                    (RING_MID + 101.0 * _tickCos[i]).toNumber(),
-                    (RING_MID + 101.0 * _tickSin[i]).toNumber(),
-                    2, 2);
-            }
+        for (var i = lit + (5 - lit % 5) % 5; i < 60; i += 5) {
+            drawTick(dc, i, 99.0, 102.5);
         }
 
         if (second >= 0) {
@@ -258,6 +256,14 @@ class ApogeeView extends WatchUi.WatchFace {
         dc.setColor(_colors[Config.PART_LINES], Graphics.COLOR_TRANSPARENT);
         dc.fillRectangle(LINE_LEFT_X, LINE_TOP_Y, LINE_WIDTH, 1);
         dc.fillRectangle(LINE_LEFT_X, LINE_BOTTOM_Y, LINE_WIDTH, 1);
+
+        // Corner brackets: the rules turn in at each end, framing the time
+        // like the edges of a viewfinder.
+        var right = LINE_LEFT_X + LINE_WIDTH - 1;
+        dc.fillRectangle(LINE_LEFT_X, LINE_TOP_Y, 1, BRACKET);
+        dc.fillRectangle(right, LINE_TOP_Y, 1, BRACKET);
+        dc.fillRectangle(LINE_LEFT_X, LINE_BOTTOM_Y - BRACKET + 1, 1, BRACKET);
+        dc.fillRectangle(right, LINE_BOTTOM_Y - BRACKET + 1, 1, BRACKET);
 
         var topHeight = LINE_TOP_Y - TOP_LABEL_Y;
         var bottomHeight = BOTTOM_LABEL_Y + LABEL_HEIGHT - LINE_BOTTOM_Y - 1;
@@ -304,6 +310,9 @@ class ApogeeView extends WatchUi.WatchFace {
     // Time
     // ---------------------------------------------------------------------
 
+    //! The time.  While the watch is awake the colon blinks once a second,
+    //! and, if enabled, dark scanlines run through the numerals like an
+    //! old CRT.
     private function drawTime(dc as Dc, clock as System.ClockTime, is24Hour as Boolean) as Void {
         var hour = clock.hour;
         var hours;
@@ -318,17 +327,27 @@ class ApogeeView extends WatchUi.WatchFace {
         // Each numeral sits in a fixed-width cell so the colon never shifts.
         var width = (hours.length() + 2) * TIME_DIGIT_STEP + TIME_COLON_STEP - TIME_GAP;
         var x = SCREEN_MID - width / 2;
+        var left = x;
 
         dc.setColor(_colors[Config.PART_HOURS], Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, TIME_Y, _fontTime, hours, Graphics.TEXT_JUSTIFY_LEFT);
         x += hours.length() * TIME_DIGIT_STEP;
 
-        dc.setColor(_colors[Config.PART_ACCENT], Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, TIME_Y, _fontTime, ":", Graphics.TEXT_JUSTIFY_LEFT);
+        if (!_awake || clock.sec % 2 == 0) {
+            dc.setColor(_colors[Config.PART_ACCENT], Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, TIME_Y, _fontTime, ":", Graphics.TEXT_JUSTIFY_LEFT);
+        }
         x += TIME_COLON_STEP;
 
         dc.setColor(_colors[Config.PART_MINUTES], Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, TIME_Y, _fontTime, minutes, Graphics.TEXT_JUSTIFY_LEFT);
+
+        if (_scanlines) {
+            dc.setColor(_colors[Config.PART_BACKGROUND], Graphics.COLOR_TRANSPARENT);
+            for (var y = TIME_Y + SCANLINE_STEP - 1; y < TIME_Y + TIME_HEIGHT; y += SCANLINE_STEP) {
+                dc.fillRectangle(left, y, width, 1);
+            }
+        }
     }
 
     // ---------------------------------------------------------------------

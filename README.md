@@ -57,7 +57,12 @@ The numerals come in two styles you can switch between on the watch: **VHS**
   four hours, like a bedside monitor, with a dot on the latest reading. It can
   instead show **status icons** (phone connected or lost, alarm set,
   do-not-disturb, unread messages – each only while it applies), or a gauge.
-- **Outer ring** – shows step goal by default; can also show battery, weekly
+- **Scanlines** – thin dark lines run through the time like an old CRT
+  screen. Switch them off under *Customize → Scanlines*.
+- **Blinking colon** – for the few seconds after you raise your wrist, the
+  colon blinks once a second like a tape deck's clock.
+- **Outer ring** – twelve hour marks, plus a lit tick for every 1/60th of
+  progress. Shows step goal by default; can also show battery, weekly
   intensity-minute goal, or nothing.
 - **Seconds tick** – for the few seconds after you raise your wrist, a bright
   tick runs round the ring. (The watch only redraws once a minute the rest of
@@ -97,6 +102,7 @@ Hold **UP** → **Watch Face** → highlight **Apogee** → **START** →
 | **Outer ring** | Choose what the ring measures.                                        |
 | **Bottom bar** | Heart trace, status icons, or a gauge (step goal, battery, intensity goal). |
 | **Seconds tick** | Turn the wrist-raise seconds tick on or off.                        |
+| **Scanlines**  | Turn the CRT scanlines through the time on or off.                    |
 
 Changing a single colour while a theme is active copies that theme into
 *Custom* first, so you adjust what you're looking at instead of starting from

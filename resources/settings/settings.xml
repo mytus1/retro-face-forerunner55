@@ -31,6 +31,7 @@
         <property id="RingMode" type="number">1</property>
         <property id="BarMode" type="number">4</property>
         <property id="ShowSeconds" type="boolean">true</property>
+        <property id="Scanlines" type="boolean">true</property>
     </properties>
 
     <settings>
@@ -296,6 +297,9 @@
             </settingConfig>
         </setting>
         <setting propertyKey="@Properties.ShowSeconds" title="@Strings.PhoneSeconds">
+            <settingConfig type="boolean"/>
+        </setting>
+        <setting propertyKey="@Properties.Scanlines" title="@Strings.PhoneScan">
             <settingConfig type="boolean"/>
         </setting>
     </settings>

@@ -16,6 +16,7 @@ import Toybox.WatchUi;
 //   +- Outer ring    -> list of gauges
 //   +- Bottom bar    -> heart trace, status icons or a gauge
 //   +- Seconds tick  (on/off)
+//   +- Scanlines     (on/off)
 // -------------------------------------------------------------------------
 
 // Names shown in the lists.  The order must match the numbers in settings.xml.
@@ -137,6 +138,7 @@ class SettingsMenu extends WatchUi.Menu2 {
         addItem(new WatchUi.MenuItem(Rez.Strings.RingTitle, nameAt(GAUGE_NAMES, Config.getNumber("RingMode", 1)), :ring, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.BarTitle, nameAt(BAR_NAMES, Config.getNumber("BarMode", 4)), :bar, null));
         addItem(new WatchUi.ToggleMenuItem(Rez.Strings.SecondsTitle, null, :seconds, Config.getBool("ShowSeconds", true), null));
+        addItem(new WatchUi.ToggleMenuItem(Rez.Strings.ScanTitle, null, :scan, Config.getBool("Scanlines", true), null));
     }
 }
 
@@ -159,6 +161,8 @@ class SettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
             pushChoice(Rez.Strings.BarTitle, BAR_NAMES, Config.getNumber("BarMode", 4), new ChoiceDelegate("BarMode", -1, BAR_NAMES, item));
         } else if (id == :seconds) {
             Config.setValue("ShowSeconds", (item as WatchUi.ToggleMenuItem).isEnabled());
+        } else if (id == :scan) {
+            Config.setValue("Scanlines", (item as WatchUi.ToggleMenuItem).isEnabled());
         } else if (id == :colors) {
             var menu = new WatchUi.Menu2({ :title => Rez.Strings.ColorsTitle });
             for (var part = 0; part < PART_NAMES.size(); part++) {
