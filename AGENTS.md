@@ -127,3 +127,12 @@ activity numbers temporarily hard-coded in a throwaway copy of the source.
   Body battery and stress are not exposed to Connect IQ on this watch.
 - Support for other 208 x 208 or larger round watches (would need the fonts
   generated at more sizes and the layout made relative).
+
+## Out of scope (decided with the owner)
+
+- Answering Claude prompts (questions, permission requests) from the watch.
+  The owner wanted it to work through the Claude iPhone app over Bluetooth,
+  which Connect IQ cannot do: watch apps only talk to Garmin Connect, and iOS
+  lets neither read or act on another app. The workable alternative (a watch
+  app plus a relay server fed by Claude Code hooks) was declined. Don't
+  re-propose it unless asked.
