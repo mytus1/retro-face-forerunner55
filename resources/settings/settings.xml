@@ -12,6 +12,7 @@
 <resources>
     <properties>
         <property id="Theme" type="number">1</property>
+        <property id="NumeralStyle" type="number">0</property>
         <property id="ColorBackground" type="number">0</property>
         <property id="ColorHours" type="number">1</property>
         <property id="ColorMinutes" type="number">1</property>
@@ -21,10 +22,12 @@
         <property id="ColorLines" type="number">3</property>
         <property id="ColorRing" type="number">1</property>
         <property id="ColorAccent" type="number">3</property>
-        <property id="FieldTopLeft" type="number">2</property>
-        <property id="FieldTopRight" type="number">1</property>
-        <property id="FieldBottomLeft" type="number">4</property>
-        <property id="FieldBottomRight" type="number">5</property>
+        <property id="FieldTopLeft" type="number">1</property>
+        <property id="FieldTopCenter" type="number">4</property>
+        <property id="FieldTopRight" type="number">5</property>
+        <property id="FieldBottomLeft" type="number">8</property>
+        <property id="FieldBottomCenter" type="number">2</property>
+        <property id="FieldBottomRight" type="number">3</property>
         <property id="RingMode" type="number">1</property>
         <property id="BarMode" type="number">2</property>
         <property id="ShowSeconds" type="boolean">true</property>
@@ -43,6 +46,12 @@
                 <listEntry value="7">@Strings.ThemeDaylight</listEntry>
                 <listEntry value="8">@Strings.ThemeBlueprint</listEntry>
                 <listEntry value="9">@Strings.ThemeSodium</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.NumeralStyle" title="@Strings.PhoneStyle">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.StyleVhs</listEntry>
+                <listEntry value="1">@Strings.StyleSquare</listEntry>
             </settingConfig>
         </setting>
         <setting propertyKey="@Properties.ColorBackground" title="@Strings.PhoneColorBackground">
@@ -166,6 +175,29 @@
                 <listEntry value="8">@Strings.FieldTemp</listEntry>
                 <listEntry value="9">@Strings.FieldSun</listEntry>
                 <listEntry value="10">@Strings.FieldRecovery</listEntry>
+                <listEntry value="11">@Strings.FieldRain</listEntry>
+                <listEntry value="12">@Strings.FieldWind</listEntry>
+                <listEntry value="13">@Strings.FieldVo2</listEntry>
+                <listEntry value="14">@Strings.FieldRestingHr</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.FieldTopCenter" title="@Strings.PhoneFieldTopCenter">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.FieldNone</listEntry>
+                <listEntry value="1">@Strings.FieldSteps</listEntry>
+                <listEntry value="2">@Strings.FieldHeart</listEntry>
+                <listEntry value="3">@Strings.FieldBattery</listEntry>
+                <listEntry value="4">@Strings.FieldDistance</listEntry>
+                <listEntry value="5">@Strings.FieldCalories</listEntry>
+                <listEntry value="6">@Strings.FieldActive</listEntry>
+                <listEntry value="7">@Strings.FieldAlerts</listEntry>
+                <listEntry value="8">@Strings.FieldTemp</listEntry>
+                <listEntry value="9">@Strings.FieldSun</listEntry>
+                <listEntry value="10">@Strings.FieldRecovery</listEntry>
+                <listEntry value="11">@Strings.FieldRain</listEntry>
+                <listEntry value="12">@Strings.FieldWind</listEntry>
+                <listEntry value="13">@Strings.FieldVo2</listEntry>
+                <listEntry value="14">@Strings.FieldRestingHr</listEntry>
             </settingConfig>
         </setting>
         <setting propertyKey="@Properties.FieldTopRight" title="@Strings.PhoneFieldTopRight">
@@ -181,6 +213,10 @@
                 <listEntry value="8">@Strings.FieldTemp</listEntry>
                 <listEntry value="9">@Strings.FieldSun</listEntry>
                 <listEntry value="10">@Strings.FieldRecovery</listEntry>
+                <listEntry value="11">@Strings.FieldRain</listEntry>
+                <listEntry value="12">@Strings.FieldWind</listEntry>
+                <listEntry value="13">@Strings.FieldVo2</listEntry>
+                <listEntry value="14">@Strings.FieldRestingHr</listEntry>
             </settingConfig>
         </setting>
         <setting propertyKey="@Properties.FieldBottomLeft" title="@Strings.PhoneFieldBottomLeft">
@@ -196,6 +232,29 @@
                 <listEntry value="8">@Strings.FieldTemp</listEntry>
                 <listEntry value="9">@Strings.FieldSun</listEntry>
                 <listEntry value="10">@Strings.FieldRecovery</listEntry>
+                <listEntry value="11">@Strings.FieldRain</listEntry>
+                <listEntry value="12">@Strings.FieldWind</listEntry>
+                <listEntry value="13">@Strings.FieldVo2</listEntry>
+                <listEntry value="14">@Strings.FieldRestingHr</listEntry>
+            </settingConfig>
+        </setting>
+        <setting propertyKey="@Properties.FieldBottomCenter" title="@Strings.PhoneFieldBottomCenter">
+            <settingConfig type="list">
+                <listEntry value="0">@Strings.FieldNone</listEntry>
+                <listEntry value="1">@Strings.FieldSteps</listEntry>
+                <listEntry value="2">@Strings.FieldHeart</listEntry>
+                <listEntry value="3">@Strings.FieldBattery</listEntry>
+                <listEntry value="4">@Strings.FieldDistance</listEntry>
+                <listEntry value="5">@Strings.FieldCalories</listEntry>
+                <listEntry value="6">@Strings.FieldActive</listEntry>
+                <listEntry value="7">@Strings.FieldAlerts</listEntry>
+                <listEntry value="8">@Strings.FieldTemp</listEntry>
+                <listEntry value="9">@Strings.FieldSun</listEntry>
+                <listEntry value="10">@Strings.FieldRecovery</listEntry>
+                <listEntry value="11">@Strings.FieldRain</listEntry>
+                <listEntry value="12">@Strings.FieldWind</listEntry>
+                <listEntry value="13">@Strings.FieldVo2</listEntry>
+                <listEntry value="14">@Strings.FieldRestingHr</listEntry>
             </settingConfig>
         </setting>
         <setting propertyKey="@Properties.FieldBottomRight" title="@Strings.PhoneFieldBottomRight">
@@ -211,6 +270,10 @@
                 <listEntry value="8">@Strings.FieldTemp</listEntry>
                 <listEntry value="9">@Strings.FieldSun</listEntry>
                 <listEntry value="10">@Strings.FieldRecovery</listEntry>
+                <listEntry value="11">@Strings.FieldRain</listEntry>
+                <listEntry value="12">@Strings.FieldWind</listEntry>
+                <listEntry value="13">@Strings.FieldVo2</listEntry>
+                <listEntry value="14">@Strings.FieldRestingHr</listEntry>
             </settingConfig>
         </setting>
         <setting propertyKey="@Properties.RingMode" title="@Strings.PhoneRing">

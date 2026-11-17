@@ -5,9 +5,10 @@ import Toybox.Math;
 import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
+import Toybox.UserProfile;
 import Toybox.Weather;
 
-//! Reads the numbers shown in the four data fields and the two gauges.
+//! Reads the numbers shown in the six data fields and the two gauges.
 module Data {
 
     //! What a data field can show.  The numbers match settings.xml.
@@ -22,7 +23,11 @@ module Data {
         FIELD_ALERTS,
         FIELD_TEMP,
         FIELD_SUN,
-        FIELD_RECOVERY
+        FIELD_RECOVERY,
+        FIELD_RAIN,
+        FIELD_WIND,
+        FIELD_VO2MAX,
+        FIELD_RESTING_HR
     }
 
     //! What the outer ring / bottom bar can show.  The numbers match settings.xml.
@@ -36,15 +41,20 @@ module Data {
     const NO_VALUE = "--";
 
     //! Label and value for one data field, e.g. ["STEPS", "8421"].
-    function field(type as Number) as Array<String> {
+    //!
+    //! Labels are at most five characters and values at most four numerals
+    //! wide, because that is all the outer columns have room for.  The middle
+    //! column is wider: pass wide = true and big counts are shown in full
+    //! instead of as "12.4K".
+    function field(type as Number, wide as Boolean) as Array<String> {
         var info = ActivityMonitor.getInfo();
         var settings = System.getDeviceSettings();
 
         if (type == FIELD_STEPS) {
-            return ["STEPS", number(info.steps)];
+            return ["STEPS", count(info.steps, wide)];
         }
         if (type == FIELD_HEART) {
-            return ["HEART", number(heartRate())];
+            return ["BPM", count(heartRate(), wide)];
         }
         if (type == FIELD_BATTERY) {
             return ["BATT", (System.getSystemStats().battery + 0.5).toNumber().format("%d") + "%"];
@@ -54,24 +64,29 @@ module Data {
             return [metric ? "KM" : "MILES", distance(info.distance, metric)];
         }
         if (type == FIELD_CALORIES) {
-            return ["KCAL", number(info.calories)];
+            return ["KCAL", count(info.calories, wide)];
         }
         if (type == FIELD_ACTIVE) {
             var active = info.activeMinutesWeek;
-            return ["ACTIVE", number(active != null ? active.total : null)];
+            return ["ACTIV", count(active != null ? active.total : null, wide)];
         }
         if (type == FIELD_ALERTS) {
-            return ["ALERTS", number(settings.notificationCount)];
-        }
-        if (type == FIELD_TEMP) {
-            return ["TEMP", temperature(settings)];
-        }
-        if (type == FIELD_SUN) {
-            return sun(settings.is24Hour);
+            return ["NOTIF", count(settings.notificationCount, wide)];
         }
         if (type == FIELD_RECOVERY) {
             // Hours until Garmin's recovery advisor says you are fully recovered.
-            return ["REC HRS", number((info has :timeToRecovery) ? info.timeToRecovery : null)];
+            return ["RECOV", count((info has :timeToRecovery) ? info.timeToRecovery : null, wide)];
+        }
+        if (type == FIELD_VO2MAX) {
+            var profile = UserProfile.getProfile();
+            return ["VO2", count((profile has :vo2maxRunning) ? profile.vo2maxRunning : null, wide)];
+        }
+        if (type == FIELD_RESTING_HR) {
+            var profile = UserProfile.getProfile();
+            return ["REST", count((profile has :restingHeartRate) ? profile.restingHeartRate : null, wide)];
+        }
+        if (type == FIELD_TEMP || type == FIELD_RAIN || type == FIELD_WIND || type == FIELD_SUN) {
+            return weather(type, settings);
         }
         return ["", ""];
     }
@@ -97,8 +112,16 @@ module Data {
 
     // ---------------------------------------------------------------------
 
-    function number(value as Number or Null) as String {
-        return (value != null) ? value.format("%d") : NO_VALUE;
+    //! A whole number.  Five figures only fit in the wide middle column, so
+    //! elsewhere 12431 is shown as "12.4K".
+    function count(value as Number or Null, wide as Boolean) as String {
+        if (value == null) {
+            return NO_VALUE;
+        }
+        if (value >= 100000 || (value >= 10000 && !wide)) {
+            return (value < 100000) ? (value / 1000.0).format("%.1f") + "K" : (value / 1000).format("%d") + "K";
+        }
+        return value.format("%d");
     }
 
     function ratio(value as Number or Null, goal as Number or Null) as Float {
@@ -135,52 +158,66 @@ module Data {
         return (d < 100.0) ? d.format("%.1f") : d.format("%d");
     }
 
-    //! Current temperature from the watch's weather data (needs a phone connection).
-    function temperature(settings as System.DeviceSettings) as String {
-        if (Toybox has :Weather) {
-            var now = Weather.getCurrentConditions();
-            var celsius = (now != null) ? now.temperature : null;
-            if (celsius != null) {
-                var t = celsius.toFloat();
-                if (settings.temperatureUnits == System.UNIT_STATUTE) {
-                    t = t * 1.8 + 32.0;
-                }
-                return Math.round(t).format("%d") + "°";
+    //! The fields that come from the watch's weather report.  The watch gets
+    //! that from your phone, for wherever the phone is, so these show "--"
+    //! until the two have synced.
+    function weather(type as Number, settings as System.DeviceSettings) as Array<String> {
+        var report = (Toybox has :Weather) ? Weather.getCurrentConditions() : null;
+
+        if (type == FIELD_TEMP) {
+            var celsius = (report != null) ? report.temperature : null;
+            if (celsius == null) {
+                return ["TEMP", NO_VALUE];
             }
+            var t = celsius.toFloat();
+            if (settings.temperatureUnits == System.UNIT_STATUTE) {
+                t = t * 1.8 + 32.0;
+            }
+            return ["TEMP", Math.round(t).format("%d") + "°"];
         }
-        return NO_VALUE;
+        if (type == FIELD_RAIN) {
+            var chance = (report != null) ? report.precipitationChance : null;
+            return ["RAIN", (chance != null) ? chance.format("%d") + "%" : NO_VALUE];
+        }
+        if (type == FIELD_WIND) {
+            // Reported in metres per second; shown in km/h or mph.
+            var speed = (report != null) ? report.windSpeed : null;
+            if (speed == null) {
+                return ["WIND", NO_VALUE];
+            }
+            var metric = settings.distanceUnits != System.UNIT_STATUTE;
+            return ["WIND", Math.round(speed * (metric ? 3.6 : 2.237)).format("%d")];
+        }
+        return sun(report, settings.is24Hour);
     }
 
     //! Whichever comes next: today's sunrise, today's sunset, or tomorrow's sunrise.
-    function sun(is24Hour as Boolean) as Array<String> {
-        if ((Toybox has :Weather) && (Weather has :getSunrise)) {
-            var conditions = Weather.getCurrentConditions();
-            var where = (conditions != null) ? conditions.observationLocationPosition : null;
-            if (where != null) {
-                var now = Time.now();
-                var rise = Weather.getSunrise(where, now);
-                var set = Weather.getSunset(where, now);
-                var label = "SUNRISE";
-                var when = rise;
-                if (rise != null && set != null && now.greaterThan(rise)) {
-                    if (now.lessThan(set)) {
-                        label = "SUNSET";
-                        when = set;
-                    } else {
-                        when = Weather.getSunrise(where, now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY)));
+    function sun(report as Weather.CurrentConditions or Null, is24Hour as Boolean) as Array<String> {
+        var where = (report != null) ? report.observationLocationPosition : null;
+        if (where != null && (Weather has :getSunrise)) {
+            var now = Time.now();
+            var rise = Weather.getSunrise(where, now);
+            var set = Weather.getSunset(where, now);
+            var label = "RISE";
+            var when = rise;
+            if (rise != null && set != null && now.greaterThan(rise)) {
+                if (now.lessThan(set)) {
+                    label = "SET";
+                    when = set;
+                } else {
+                    when = Weather.getSunrise(where, now.add(new Time.Duration(Gregorian.SECONDS_PER_DAY)));
+                }
+            }
+            if (when != null) {
+                var t = Gregorian.info(when, Time.FORMAT_SHORT);
+                var hour = t.hour;
+                if (!is24Hour) {
+                    hour = hour % 12;
+                    if (hour == 0) {
+                        hour = 12;
                     }
                 }
-                if (when != null) {
-                    var t = Gregorian.info(when, Time.FORMAT_SHORT);
-                    var hour = t.hour;
-                    if (!is24Hour) {
-                        hour = hour % 12;
-                        if (hour == 0) {
-                            hour = 12;
-                        }
-                    }
-                    return [label, hour.format("%02d") + ":" + t.min.format("%02d")];
-                }
+                return [label, hour.format("%02d") + ":" + t.min.format("%02d")];
             }
         }
         return ["SUN", NO_VALUE];

@@ -5,7 +5,10 @@
         <iq:products>
             <iq:product id="fr55"/>
         </iq:products>
-        <iq:permissions/>
+        <!-- UserProfile: needed for the VO2 max and resting heart rate fields -->
+        <iq:permissions>
+            <iq:uses-permission id="UserProfile"/>
+        </iq:permissions>
         <iq:languages>
             <iq:language>eng</iq:language>
         </iq:languages>

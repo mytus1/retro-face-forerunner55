@@ -9,39 +9,45 @@ import Toybox.WatchUi;
 // -------------------------------------------------------------------------
 // Layout, in pixels, for the Forerunner 55's 208 x 208 round screen.
 //
-//           . ' | ' .            outer ring: 60 ticks, lit ones are a gauge
-//         MON 16 NOV             date
-//        HEART | STEPS           labels
-//          62  | 8421            values
-//       ----------------
-//          19:53                 time
-//       ----------------
-//         5.24 | 1840            values
-//          KM  | KCAL            labels
-//         ||||||||....           bottom bar: a second gauge
+//             . ' | ' .              outer ring: 60 ticks, lit ones are a gauge
+//            MON 16 NOV              date
+//        STEPS |  KM  | KCAL         labels
+//         8421 | 6.47 | 1840         values
+//       ----------------------
+//              19:53                 time
+//       ----------------------
+//          17° |  62  | 76%          values
+//         TEMP | BPM  | BATT         labels
+//            ||||||||....            bottom bar: a second gauge
 //
-// Nudge the numbers here to move things around.
+// Nudge the numbers here to move things around.  The outer columns are hemmed
+// in by the round edge: they have room for a five-letter label and a value
+// four numerals wide, and not a pixel more.
 // -------------------------------------------------------------------------
-const SCREEN_MID = 104;          // x that text is centred on
+const SCREEN_MID = 104;          // x that centred text is drawn at
 const RING_MID = 103.5;          // true centre of a 208 px wide circle
 
 const DATE_Y = 18;               // top of the date line
 
-const TOP_LABEL_Y = 31;          // top row: label above value
-const TOP_VALUE_Y = 42;
-const BOTTOM_VALUE_Y = 146;      // bottom row: value above label
-const BOTTOM_LABEL_Y = 171;
-const COLUMN_OFFSET = 40;        // field centres are this far left/right of centre
+const TOP_LABEL_Y = 38;          // top row: label above value
+const TOP_VALUE_Y = 49;
+const BOTTOM_VALUE_Y = 145;      // bottom row: value above label
+const BOTTOM_LABEL_Y = 163;
+const LABEL_HEIGHT = 7;
+const SIDE_LEFT_X = 51;          // centres of the two outer columns
+const SIDE_RIGHT_X = 158;
+const DIVIDER_LEFT_X = 76;       // the short vertical rules between columns
+const DIVIDER_RIGHT_X = 131;
 
-const LINE_TOP_Y = 67;           // the two horizontal dividers
-const LINE_BOTTOM_Y = 141;
+const LINE_TOP_Y = 68;           // the two horizontal rules
+const LINE_BOTTOM_Y = 139;
 const LINE_LEFT_X = 24;
-const LINE_WIDTH = 161;
+const LINE_WIDTH = 160;
 
-const TIME_Y = 74;               // top of the big numerals
-const TIME_DIGIT_STEP = 38;      // numeral width (34) + gap (4)
-const TIME_COLON_STEP = 13;      // colon width (9) + gap (4)
-const TIME_GAP = 4;
+const TIME_Y = 76;               // top of the big numerals (they are 56 tall)
+const TIME_DIGIT_STEP = 38;      // numeral width (32) + gap (6)
+const TIME_COLON_STEP = 14;      // colon width (8) + gap (6)
+const TIME_GAP = 6;
 
 const BAR_Y = 184;               // bottom bar: 10 segments
 const BAR_X = 80;
@@ -51,6 +57,12 @@ const BAR_SEGMENT_STEP = 5;
 
 const DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTH_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+
+//! Numeral styles.  The numbers match settings.xml.
+enum {
+    STYLE_VHS,
+    STYLE_SQUARE
+}
 
 //! Draws the watch face.
 class ApogeeView extends WatchUi.WatchFace {
@@ -65,6 +77,7 @@ class ApogeeView extends WatchUi.WatchFace {
     private var _tickSin as Array<Float>;
 
     // Settings, cached so they are not re-read on every redraw.
+    private var _style as Number;
     private var _colors as Array<Number>;
     private var _fields as Array<Number>;
     private var _ringMode as Number = Data.GAUGE_STEPS;
@@ -78,8 +91,9 @@ class ApogeeView extends WatchUi.WatchFace {
     function initialize() {
         WatchFace.initialize();
 
-        _fontTime = WatchUi.loadResource(Rez.Fonts.FontTime) as WatchUi.FontResource;
-        _fontData = WatchUi.loadResource(Rez.Fonts.FontData) as WatchUi.FontResource;
+        _style = Config.getNumber("NumeralStyle", STYLE_VHS);
+        _fontTime = loadTimeFont(_style);
+        _fontData = loadDataFont(_style);
         _fontLabel = WatchUi.loadResource(Rez.Fonts.FontLabel) as WatchUi.FontResource;
         _fontDate = WatchUi.loadResource(Rez.Fonts.FontLabelBold) as WatchUi.FontResource;
 
@@ -92,18 +106,35 @@ class ApogeeView extends WatchUi.WatchFace {
         }
 
         _colors = Config.colors();
-        _fields = [0, 0, 0, 0] as Array<Number>;
+        _fields = [0, 0, 0, 0, 0, 0] as Array<Number>;
         loadSettings();
+    }
+
+    private function loadTimeFont(style as Number) as WatchUi.FontResource {
+        return WatchUi.loadResource((style == STYLE_SQUARE) ? Rez.Fonts.FontTimeSquare : Rez.Fonts.FontTimeVhs) as WatchUi.FontResource;
+    }
+
+    private function loadDataFont(style as Number) as WatchUi.FontResource {
+        return WatchUi.loadResource((style == STYLE_SQUARE) ? Rez.Fonts.FontDataSquare : Rez.Fonts.FontDataVhs) as WatchUi.FontResource;
     }
 
     //! Re-read everything the user can configure.
     function loadSettings() as Void {
+        var style = Config.getNumber("NumeralStyle", STYLE_VHS);
+        if (style != _style) {
+            _style = style;
+            _fontTime = loadTimeFont(style);
+            _fontData = loadDataFont(style);
+        }
         _colors = Config.colors();
+        // Order: top left, top middle, top right, bottom left, bottom middle, bottom right.
         _fields = [
-            Config.getNumber("FieldTopLeft", Data.FIELD_HEART),
-            Config.getNumber("FieldTopRight", Data.FIELD_STEPS),
-            Config.getNumber("FieldBottomLeft", Data.FIELD_DISTANCE),
-            Config.getNumber("FieldBottomRight", Data.FIELD_CALORIES)
+            Config.getNumber("FieldTopLeft", Data.FIELD_STEPS),
+            Config.getNumber("FieldTopCenter", Data.FIELD_DISTANCE),
+            Config.getNumber("FieldTopRight", Data.FIELD_CALORIES),
+            Config.getNumber("FieldBottomLeft", Data.FIELD_TEMP),
+            Config.getNumber("FieldBottomCenter", Data.FIELD_HEART),
+            Config.getNumber("FieldBottomRight", Data.FIELD_BATTERY)
         ] as Array<Number>;
         _ringMode = Config.getNumber("RingMode", Data.GAUGE_STEPS);
         _barMode = Config.getNumber("BarMode", Data.GAUGE_BATTERY);
@@ -136,10 +167,8 @@ class ApogeeView extends WatchUi.WatchFace {
         drawRing(dc, (_awake && _showSeconds) ? clock.sec : -1);
         drawDate(dc, clock, settings.is24Hour);
         drawFrame(dc);
-        drawField(dc, _fields[0], SCREEN_MID - COLUMN_OFFSET, TOP_LABEL_Y, TOP_VALUE_Y);
-        drawField(dc, _fields[1], SCREEN_MID + COLUMN_OFFSET, TOP_LABEL_Y, TOP_VALUE_Y);
-        drawField(dc, _fields[2], SCREEN_MID - COLUMN_OFFSET, BOTTOM_LABEL_Y, BOTTOM_VALUE_Y);
-        drawField(dc, _fields[3], SCREEN_MID + COLUMN_OFFSET, BOTTOM_LABEL_Y, BOTTOM_VALUE_Y);
+        drawRow(dc, 0, TOP_LABEL_Y, TOP_VALUE_Y);
+        drawRow(dc, 3, BOTTOM_LABEL_Y, BOTTOM_VALUE_Y);
         drawTime(dc, clock, settings.is24Hour);
         drawBar(dc);
         drawStatus(dc, settings);
@@ -206,29 +235,52 @@ class ApogeeView extends WatchUi.WatchFace {
         dc.drawText(SCREEN_MID, DATE_Y, _fontDate, text, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
-    //! The two horizontal rules and the short vertical ones between fields.
+    //! The two horizontal rules, and a short vertical rule wherever two
+    //! neighbouring fields are both in use.
     private function drawFrame(dc as Dc) as Void {
         dc.setColor(_colors[Config.PART_LINES], Graphics.COLOR_TRANSPARENT);
         dc.fillRectangle(LINE_LEFT_X, LINE_TOP_Y, LINE_WIDTH, 1);
         dc.fillRectangle(LINE_LEFT_X, LINE_BOTTOM_Y, LINE_WIDTH, 1);
-        if (_fields[0] != Data.FIELD_NONE && _fields[1] != Data.FIELD_NONE) {
-            dc.fillRectangle(SCREEN_MID, TOP_LABEL_Y, 1, LINE_TOP_Y - TOP_LABEL_Y);
+
+        var topHeight = LINE_TOP_Y - TOP_LABEL_Y;
+        var bottomHeight = BOTTOM_LABEL_Y + LABEL_HEIGHT - LINE_BOTTOM_Y - 1;
+        if (used(0) && used(1)) {
+            dc.fillRectangle(DIVIDER_LEFT_X, TOP_LABEL_Y, 1, topHeight);
         }
-        if (_fields[2] != Data.FIELD_NONE && _fields[3] != Data.FIELD_NONE) {
-            dc.fillRectangle(SCREEN_MID, LINE_BOTTOM_Y + 1, 1, BOTTOM_LABEL_Y + 7 - LINE_BOTTOM_Y - 1);
+        if (used(1) && used(2)) {
+            dc.fillRectangle(DIVIDER_RIGHT_X, TOP_LABEL_Y, 1, topHeight);
+        }
+        if (used(3) && used(4)) {
+            dc.fillRectangle(DIVIDER_LEFT_X, LINE_BOTTOM_Y + 1, 1, bottomHeight);
+        }
+        if (used(4) && used(5)) {
+            dc.fillRectangle(DIVIDER_RIGHT_X, LINE_BOTTOM_Y + 1, 1, bottomHeight);
         }
     }
 
+    //! Is this field slot (0-5) showing something?
+    private function used(slot as Number) as Boolean {
+        return _fields[slot] != Data.FIELD_NONE;
+    }
+
+    //! Three fields side by side, starting at slot first (0 = top row, 3 = bottom row).
+    private function drawRow(dc as Dc, first as Number, labelY as Number, valueY as Number) as Void {
+        drawField(dc, _fields[first], false, SIDE_LEFT_X, labelY, valueY);
+        drawField(dc, _fields[first + 1], true, SCREEN_MID, labelY, valueY);
+        drawField(dc, _fields[first + 2], false, SIDE_RIGHT_X, labelY, valueY);
+    }
+
     //! One data field: a small label and a larger value, both centred on x.
-    private function drawField(dc as Dc, type as Number, x as Number, labelY as Number, valueY as Number) as Void {
+    //! wide: true for the middle column, which has room for longer values.
+    private function drawField(dc as Dc, type as Number, wide as Boolean, x as Number, labelY as Number, valueY as Number) as Void {
         if (type == Data.FIELD_NONE) {
             return;
         }
-        var content = Data.field(type);
+        var content = Data.field(type, wide);
         dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + 1, labelY, _fontLabel, content[0], Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(x, labelY, _fontLabel, content[0], Graphics.TEXT_JUSTIFY_CENTER);
         dc.setColor(_colors[Config.PART_VALUES], Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x + 1, valueY, _fontData, content[1], Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(x, valueY, _fontData, content[1], Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // ---------------------------------------------------------------------

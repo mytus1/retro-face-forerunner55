@@ -4,30 +4,55 @@ A retro-futuristic digital watch face for the **Garmin Forerunner 55**.
 
 ![Apogee on a Forerunner 55](docs/preview.png)
 
-Big squared numerals, four data fields, two gauges, and nothing else. Every
-part of it can be recoloured, either from a list of themes or one piece at a
-time.
+A big video-recorder clock, six data fields, two gauges, and nothing else.
+Every part of it can be recoloured, either from a list of themes or one piece
+at a time.
 
 ![The nine built-in themes](docs/themes.png)
+
+The numerals come in two styles you can switch between on the watch: **VHS**
+(chunky, stair-stepped, like a tape deck's on-screen clock) and **Squared**
+(smooth, rounded-corner, space-age).
+
+![VHS and Squared numerals side by side](docs/styles.png)
 
 ## What's on the face
 
 ```
-        . ' | ' .          outer ring   60 ticks; the lit ones show progress to your step goal
-       MON 16 NOV          date
-     HEART  |  STEPS
-       62   |  8421        two data fields
-    ------------------
-        19:53              time (follows the watch's 12/24 h setting)
-    ------------------
-      6.47  |  1840        two more data fields
-       KM   |  KCAL
-       ||||||||..          bottom bar   battery level, in tenths
+           . ' | ' .            outer ring   60 ticks; the lit ones show progress to your step goal
+          MON 16 NOV            date
+      STEPS |  KM  | KCAL
+       8421 | 6.47 | 1840       three data fields
+     ----------------------
+            19:53               time (follows the watch's 12/24 h setting)
+     ----------------------
+        17° |  62  | 76%        three more data fields
+       TEMP | BPM  | BATT
+          ||||||||..            bottom bar   battery level, in tenths
 ```
 
-- **Data fields** – each of the four can show: steps, heart rate, battery,
-  distance, calories, weekly intensity minutes, notifications, temperature,
-  next sunrise/sunset, recovery time, or nothing.
+- **Data fields** – each of the six can show any of these, or be left empty:
+
+  | Field            | Shows                                                   |
+  | ---------------- | ------------------------------------------------------- |
+  | Steps            | today's step count                                      |
+  | Heart rate       | current beats per minute                                |
+  | Battery          | charge, in percent                                      |
+  | Distance         | today's distance, in km or miles                        |
+  | Calories         | today's calories                                        |
+  | Intensity min    | this week's intensity minutes                           |
+  | Temperature      | current temperature where you are                       |
+  | Rain chance      | chance of rain, in percent                              |
+  | Wind speed       | current wind, in km/h or mph                            |
+  | Sunrise/set      | the next sunrise or sunset                              |
+  | Recovery hrs     | hours left on Garmin's recovery advisor                 |
+  | VO2 max          | your running VO2 max estimate                           |
+  | Resting HR       | your resting heart rate                                 |
+  | Notifications    | unread notification count                               |
+
+  Temperature, rain, wind and sunrise/sunset come from the weather report the
+  watch receives from your phone, for wherever the phone is. They show `--`
+  until the watch has synced with Garmin Connect.
 - **Outer ring** and **bottom bar** – each can show step goal, battery,
   weekly intensity-minute goal, or nothing.
 - **Seconds tick** – for the few seconds after you raise your wrist, a bright
@@ -61,8 +86,9 @@ Hold **UP** → **Watch Face** → highlight **Apogee** → **START** →
 | Menu           | What it does                                                          |
 | -------------- | --------------------------------------------------------------------- |
 | **Theme**      | Pick one of the nine built-in colour schemes, or *Custom*.            |
+| **Numerals**   | Switch the numeral style between *VHS* and *Squared*.                 |
 | **Colours**    | Set the colour of one part: background, hours, minutes, date, data values, data labels, lines, ring ticks, accent. |
-| **Data fields**| Choose what each of the four fields shows.                            |
+| **Data fields**| Choose what each of the six fields shows.                             |
 | **Outer ring** | Choose what the ring measures.                                        |
 | **Bottom bar** | Choose what the bar measures.                                         |
 | **Seconds tick** | Turn the wrist-raise seconds tick on or off.                        |
@@ -105,7 +131,8 @@ Everything is plain text and commented. The usual places to tinker:
 | change the default theme, fields or gauges   | `<properties>` in [`resources/settings/settings.xml`](resources/settings/settings.xml) |
 | move things around on screen                 | the constants at the top of [`source/ApogeeView.mc`](source/ApogeeView.mc) |
 | add a new kind of data field                 | [`source/Data.mc`](source/Data.mc) (plus its name in `strings.xml`, `settings.xml`, `Settings.mc`) |
-| change the size or weight of the numerals    | `TIME` / `DATA` in [`tools/make_fonts.py`](tools/make_fonts.py), then re-run it |
+| redraw a VHS numeral                         | the `VHS` table in [`tools/make_fonts.py`](tools/make_fonts.py), then re-run it |
+| change the weight or roundness of the Squared numerals | `TIME_SQUARE` / `DATA_SQUARE` in `tools/make_fonts.py`, then re-run it |
 | redraw a letter or icon                      | the `LABEL` table in `tools/make_fonts.py`, then re-run it |
 
 The fonts are original to this project. Because the screen has no

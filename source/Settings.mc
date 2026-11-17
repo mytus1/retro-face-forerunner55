@@ -10,8 +10,9 @@ import Toybox.WatchUi;
 //
 //   Apogee
 //   +- Theme         -> list of themes
+//   +- Numerals      -> VHS or Squared
 //   +- Colours       -> nine parts -> list of the 8 colours
-//   +- Data fields   -> four positions -> list of field types
+//   +- Data fields   -> six positions -> list of field types
 //   +- Outer ring    -> list of gauges
 //   +- Bottom bar    -> list of gauges
 //   +- Seconds tick  (on/off)
@@ -54,12 +55,27 @@ const PART_NAMES = [
     Rez.Strings.ColorAccent
 ] as Array<ResourceId>;
 
-const FIELD_KEYS = ["FieldTopLeft", "FieldTopRight", "FieldBottomLeft", "FieldBottomRight"] as Array<String>;
+const STYLE_NAMES = [
+    Rez.Strings.StyleVhs,
+    Rez.Strings.StyleSquare
+] as Array<ResourceId>;
+
+// The six field slots, in the order ApogeeView draws them.
+const FIELD_KEYS = [
+    "FieldTopLeft",
+    "FieldTopCenter",
+    "FieldTopRight",
+    "FieldBottomLeft",
+    "FieldBottomCenter",
+    "FieldBottomRight"
+] as Array<String>;
 
 const SLOT_NAMES = [
     Rez.Strings.FieldTopLeft,
+    Rez.Strings.FieldTopCenter,
     Rez.Strings.FieldTopRight,
     Rez.Strings.FieldBottomLeft,
+    Rez.Strings.FieldBottomCenter,
     Rez.Strings.FieldBottomRight
 ] as Array<ResourceId>;
 
@@ -74,7 +90,11 @@ const FIELD_NAMES = [
     Rez.Strings.FieldAlerts,
     Rez.Strings.FieldTemp,
     Rez.Strings.FieldSun,
-    Rez.Strings.FieldRecovery
+    Rez.Strings.FieldRecovery,
+    Rez.Strings.FieldRain,
+    Rez.Strings.FieldWind,
+    Rez.Strings.FieldVo2,
+    Rez.Strings.FieldRestingHr
 ] as Array<ResourceId>;
 
 const GAUGE_NAMES = [
@@ -100,6 +120,7 @@ class SettingsMenu extends WatchUi.Menu2 {
         Menu2.initialize({ :title => Rez.Strings.AppName });
         gThemeItem = new WatchUi.MenuItem(Rez.Strings.ThemeTitle, nameAt(THEME_NAMES, Config.theme()), :theme, null);
         addItem(gThemeItem as WatchUi.MenuItem);
+        addItem(new WatchUi.MenuItem(Rez.Strings.StyleTitle, nameAt(STYLE_NAMES, Config.getNumber("NumeralStyle", 0)), :style, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.ColorsTitle, null, :colors, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.FieldsTitle, null, :fields, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.RingTitle, nameAt(GAUGE_NAMES, Config.getNumber("RingMode", 1)), :ring, null));
@@ -119,6 +140,8 @@ class SettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
         var id = item.getId();
         if (id == :theme) {
             pushChoice(Rez.Strings.ThemeTitle, THEME_NAMES, Config.theme(), new ChoiceDelegate("Theme", -1, THEME_NAMES, item));
+        } else if (id == :style) {
+            pushChoice(Rez.Strings.StyleTitle, STYLE_NAMES, Config.getNumber("NumeralStyle", 0), new ChoiceDelegate("NumeralStyle", -1, STYLE_NAMES, item));
         } else if (id == :ring) {
             pushChoice(Rez.Strings.RingTitle, GAUGE_NAMES, Config.getNumber("RingMode", 1), new ChoiceDelegate("RingMode", -1, GAUGE_NAMES, item));
         } else if (id == :bar) {

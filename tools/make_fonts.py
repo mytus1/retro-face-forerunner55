@@ -3,18 +3,24 @@
 
 The Forerunner 55 has a 1-bit-per-channel display with no anti-aliasing, so
 instead of rasterising an outline font (which goes ragged at these sizes) the
-glyphs are *designed on the pixel grid*:
+glyphs are *designed on the pixel grid*.
 
-  * Numerals are built from seven straight strokes, then every outer corner is
-    rounded and every inner corner is left crisp.  That gives the condensed,
-    squared, monoline look of space-age display type.
-  * Labels use a hand-drawn 5x7 pixel alphabet.
+There are two numeral styles, switchable in the face's settings:
+
+  * VHS      Drawn by hand on a coarse 8 x 14 grid, like the character
+             generator of a video recorder.  Used as-is for the small data
+             values and blown up 4x, blocks and all, for the time.
+  * Squared  Built from seven straight strokes, then every outer corner is
+             rounded and every inner corner left crisp: condensed, monoline,
+             space-age display type.
+
+Labels use a hand-drawn 5x7 pixel alphabet.
 
 Outputs (in resources/fonts):
-    apogee_time.fnt / .png    big clock numerals
-    apogee_data.fnt / .png    medium numerals for the data fields
-    apogee_label.fnt / .png   small caps, digits, punctuation and icons
-    apogee_label_bold.fnt / .png   the same alphabet, one pixel heavier (date line)
+    apogee_time_vhs / apogee_data_vhs          VHS numerals, large and small
+    apogee_time_square / apogee_data_square    squared numerals, large and small
+    apogee_label                               small caps, digits, punctuation, icons
+    apogee_label_bold                          same alphabet, one pixel heavier (date)
 
 Usage:  python3 tools/make_fonts.py            (needs Pillow: pip install pillow)
 """
@@ -30,10 +36,22 @@ SS = 8  # supersampling factor used while rounding corners
 # --------------------------------------------------------------------------
 # Tunables.  Change these, re-run the script, rebuild the watch face.
 # --------------------------------------------------------------------------
-# w/h = glyph size in px, t = stroke thickness, r = outer corner radius,
-# gap = space between glyphs.  (h - t) must be even so the middle bar centres.
-TIME = dict(w=34, h=61, t=9, r=8, gap=4)
-DATA = dict(w=11, h=21, t=3, r=3, gap=2)
+# Both styles must share the same footprint, because the layout in
+# source/ApogeeView.mc is the same for both:
+#   time numerals 32 x 56 with a 6 px gap, colon 8 px wide
+#   data numerals  8 x 14 with a 2 px gap
+#
+# Squared style: w/h = glyph size in px, t = stroke thickness, r = outer
+# corner radius, gap = space between glyphs.  (h - t) must be even so the
+# middle bar centres.
+TIME_SQUARE = dict(w=32, h=56, t=8, r=7, gap=6)
+DATA_SQUARE = dict(w=8, h=14, t=2, r=2, gap=2)
+
+# VHS style: the art below is 8 x 14 cells; the time shows each cell as a
+# VHS_SCALE x VHS_SCALE block of pixels.
+VHS_SCALE = 4
+TIME_GAP = 6
+DATA_GAP = 2
 
 
 # --------------------------------------------------------------------------
@@ -179,65 +197,223 @@ def colon(w, h, t, **_):
     return round_corners(g, t + 1, r_bend=0, r_end=max(0.0, t / 4.5))
 
 
+# --------------------------------------------------------------------------
+# VHS numerals: 8 x 14 cells, strokes two cells thick, corners cut by one cell
+# --------------------------------------------------------------------------
+VHS = {
+    "0": [
+        "..####..",
+        ".######.",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        ".######.",
+        "..####..",
+    ],
+    "1": [
+        "...##...",
+        "..###...",
+        ".####...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        ".######.",
+        ".######.",
+    ],
+    "2": [
+        "..####..",
+        ".######.",
+        "##....##",
+        "##....##",
+        "......##",
+        ".....###",
+        "....###.",
+        "...###..",
+        "..###...",
+        ".###....",
+        "###.....",
+        "##......",
+        "########",
+        "########",
+    ],
+    "3": [
+        "..####..",
+        ".######.",
+        "##....##",
+        "......##",
+        "......##",
+        "......##",
+        "...####.",
+        "...####.",
+        "......##",
+        "......##",
+        "......##",
+        "##....##",
+        ".######.",
+        "..####..",
+    ],
+    "4": [
+        ".....##.",
+        "....###.",
+        "...####.",
+        "..##.##.",
+        ".##..##.",
+        "##...##.",
+        "##...##.",
+        "##...##.",
+        "########",
+        "########",
+        ".....##.",
+        ".....##.",
+        ".....##.",
+        ".....##.",
+    ],
+    "5": [
+        "########",
+        "########",
+        "##......",
+        "##......",
+        "##......",
+        "######..",
+        "#######.",
+        "......##",
+        "......##",
+        "......##",
+        "......##",
+        "##....##",
+        ".######.",
+        "..####..",
+    ],
+    "6": [
+        "..####..",
+        ".######.",
+        "##....##",
+        "##......",
+        "##......",
+        "######..",
+        "#######.",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        ".######.",
+        "..####..",
+    ],
+    "7": [
+        "########",
+        "########",
+        "......##",
+        "......##",
+        ".....##.",
+        ".....##.",
+        "....##..",
+        "....##..",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+    ],
+    "8": [
+        "..####..",
+        ".######.",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        ".######.",
+        ".######.",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        ".######.",
+        "..####..",
+    ],
+    "9": [
+        "..####..",
+        ".######.",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        "##....##",
+        ".#######",
+        "..######",
+        "......##",
+        "......##",
+        "##....##",
+        ".######.",
+        "..####..",
+    ],
+    ":": ["..", "..", "..", "##", "##", "..", "..", "..", "..", "##", "##", "..", "..", ".."],
+}
+
+
+def scale(g, n):
+    """Blow a glyph up n times, keeping every cell a hard-edged block."""
+    out = []
+    for row in g:
+        wide = [v for v in row for _ in range(n)]
+        out.extend([list(wide) for _ in range(n)])
+    return out
+
+
+# Punctuation for the small data numerals (14 rows tall, shared by both styles)
 DATA_EXTRA = {
-    ":": [
-        "...",
-        "...",
-        "...",
-        "...",
-        "...",
-        "###",
-        "###",
-        "###",
-        "...",
-        "...",
-        "...",
-        "...",
-        "...",
-        "###",
-        "###",
-        "###",
-        "...",
-        "...",
-        "...",
-        "...",
-        "...",
-    ],
-    ".": ["..."] * 18 + ["###"] * 3,
-    "-": ["......."] * 9 + ["#######"] * 3 + ["......."] * 9,
+    ":": ["..", "..", "..", "##", "##", "..", "..", "..", "..", "##", "##", "..", "..", ".."],
+    ".": [".."] * 12 + ["##"] * 2,
+    "-": ["....."] * 6 + ["#####"] * 2 + ["....."] * 6,
     "%": [
-        ".###.......",
-        "#####......",
-        "##.##....##",
-        "##.##...##.",
-        "##.##...##.",
-        "#####..##..",
-        ".###...##..",
-        "......##...",
-        "......##...",
-        ".....##....",
-        ".....##....",
-        "....##.....",
-        "....##.....",
-        "...##......",
-        "...##...###",
-        "..##...####",
-        "..##...##.#",
-        ".##....##.#",
-        ".##....##.#",
-        "##.....####",
-        ".......###.",
+        "###...##",
+        "#.#...##",
+        "###..##.",
+        ".....##.",
+        "....##..",
+        "....##..",
+        "...##...",
+        "...##...",
+        "..##....",
+        "..##....",
+        ".##..###",
+        ".##..#.#",
+        "##...###",
+        "##......",
     ],
-    "°": [
-        ".###.",
-        "#####",
-        "##.##",
-        "##.##",
-        "#####",
-        ".###.",
-    ]
-    + ["....."] * 15,
-    " ": ["....."] * 21,
+    "°": [".##.", "#..#", "#..#", ".##."] + ["...."] * 10,
+    # "K" for thousands, e.g. 12.4K steps
+    "K": [
+        "##..##",
+        "##..##",
+        "##.##.",
+        "##.##.",
+        "####..",
+        "####..",
+        "###...",
+        "###...",
+        "####..",
+        "####..",
+        "##.##.",
+        "##.##.",
+        "##..##",
+        "##..##",
+    ],
+    " ": ["...."] * 14,
 }
 
 # --------------------------------------------------------------------------
@@ -388,15 +564,27 @@ def write_font(name, glyphs, gap, line_height):
 def build():
     fonts = {}
 
-    time_glyphs = [(c, numeral(c, **TIME)) for c in "0123456789"]
-    time_glyphs.append((":", colon(**TIME)))
-    fonts["apogee_time"] = write_font("apogee_time", time_glyphs, TIME["gap"], TIME["h"])
+    def data_extras():
+        out = []
+        for c, art in DATA_EXTRA.items():
+            assert len(art) == 14 and len(set(len(r) for r in art)) == 1, c
+            out.append((c, from_art(art)))
+        return out
 
-    data_glyphs = [(c, numeral(c, **DATA)) for c in "0123456789"]
-    for c, art in DATA_EXTRA.items():
-        assert len(art) == DATA["h"], (c, len(art))
-        data_glyphs.append((c, from_art(art)))
-    fonts["apogee_data"] = write_font("apogee_data", data_glyphs, DATA["gap"], DATA["h"])
+    # VHS: one drawing, two sizes
+    for c, art in VHS.items():
+        assert len(art) == 14 and len(set(len(r) for r in art)) == 1, c
+    big = [(c, scale(from_art(VHS[c]), VHS_SCALE)) for c in "0123456789:"]
+    fonts["apogee_time_vhs"] = write_font("apogee_time_vhs", big, TIME_GAP, 14 * VHS_SCALE)
+    small = [(c, from_art(VHS[c])) for c in "0123456789"]
+    fonts["apogee_data_vhs"] = write_font("apogee_data_vhs", small + data_extras(), DATA_GAP, 14)
+
+    # Squared: generated from strokes at each size
+    big = [(c, numeral(c, **TIME_SQUARE)) for c in "0123456789"]
+    big.append((":", colon(**TIME_SQUARE)))
+    fonts["apogee_time_square"] = write_font("apogee_time_square", big, TIME_SQUARE["gap"], TIME_SQUARE["h"])
+    small = [(c, numeral(c, **DATA_SQUARE)) for c in "0123456789"]
+    fonts["apogee_data_square"] = write_font("apogee_data_square", small + data_extras(), DATA_SQUARE["gap"], DATA_SQUARE["h"])
 
     label_glyphs = []
     for c, art in LABEL.items():

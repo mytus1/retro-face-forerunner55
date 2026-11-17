@@ -18,7 +18,10 @@ Working and feature-complete for a first version.
 Verified in Garmin's simulator (SDK 9.3.0, device `fr55`, CIQ 3.4.2):
 
 - compiles with no warnings at the strictest type-check level (`-l 3`)
-- all nine themes render; every data field type renders with live simulator data
+- all nine themes render in the six-field layout, in both numeral styles
+- every data field type renders with live simulator data (weather fields that
+  need a location show "--" there, as designed)
+- the widest values each column can receive stay clear of the tick ring
 - 24 h and 12 h modes; empty field slots; status icons
 - the on-watch settings menu: every level opens, choices are stored and applied
 - `dist/Apogee.prg` (the release build that is committed) loads and runs
@@ -42,19 +45,28 @@ From the SDK's `fr55/compiler.json`:
   Any other colour is snapped to the nearest of the eight.
 - Connect IQ API 3.4. No complications API, no floors, no body battery.
 - `Toybox has :SensorHistory` throws without the SensorHistory permission -
-  do not probe it.
+  do not probe it. The manifest requests `UserProfile` (VO2 max, resting HR).
 - Watch faces redraw once a minute except for ~10 s after a wrist raise.
 
 ## Design rules worth keeping
 
 - Fonts are **generated**, never hand-edited: change `tools/make_fonts.py`,
-  run it, commit the regenerated files in `resources/fonts`. Numerals are built
-  from seven strokes with rounded outer corners; labels are a hand-drawn 5x7
-  alphabet (plus a one-pixel-bolder cut used for the date).
-- Field labels must be **7 characters or fewer**, and values 5 numerals or
-  fewer, or they run into the tick ring. Layout numbers are the constants at
-  the top of `source/ApogeeView.mc`; they were worked out against the circle,
-  so check the corners when moving anything outward.
+  run it, commit the regenerated files in `resources/fonts`. There are two
+  numeral styles (setting `NumeralStyle`): *VHS* is hand-drawn on an 8 x 14
+  grid and used at 1x for data values and 4x for the time; *Squared* is built
+  from seven strokes with rounded outer corners. Both must keep the same
+  footprint (time 32 x 56 with a 6 px gap, data 8 x 14 with a 2 px gap) because
+  the layout is shared. Labels are a hand-drawn 5x7 alphabet (plus a
+  one-pixel-bolder cut used for the date).
+- Six fields in two rows of three. The outer columns are hemmed in by the
+  round edge: labels there must be **5 characters or fewer** and values no
+  wider than four numerals (42 px); `Data.count()` abbreviates 12431 to
+  "12.4K" for that reason. The middle column takes five numerals. Layout
+  numbers are the constants at the top of `source/ApogeeView.mc`; they were
+  worked out against the circle with almost no slack, so check the corners
+  when moving anything outward.
+- The owner did not want a notification count on the face by default; it is
+  still offered as a field option.
 - The lists in `Settings.mc`, `strings.xml` and `settings.xml` are parallel:
   an option's position in each must match its stored number (and the enums in
   `Data.mc` / theme rows in `Config.mc`).
@@ -106,6 +118,7 @@ activity numbers temporarily hard-coded in a throwaway copy of the source.
 
 - Always-on seconds via `onPartialUpdate` (deliberately skipped: battery).
 - More data fields: alarms, do-not-disturb (glyphs `^` and `~` already exist
-  in the label font), second time zone.
+  in the label font), second time zone, humidity, feels-like temperature.
+  Body battery and stress are not exposed to Connect IQ on this watch.
 - Support for other 208 x 208 or larger round watches (would need the fonts
   generated at more sizes and the layout made relative).
