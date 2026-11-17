@@ -11,16 +11,16 @@ import Toybox.Weather;
 // -------------------------------------------------------------------------
 // Layout, in pixels, for the Forerunner 55's 208 x 208 round screen.
 //
-//             . ' | ' .              outer ring: 60 ticks, lit ones are a gauge
+//             . ' | ' .              outer ring: hour marks; lit ticks are a gauge
 //            MON 16 NOV              date
 //        STEPS |  KM  | KCAL         labels
 //         8421 | 6.47 | 1840         values
-//       ----------------------
-//              19:53                 time
-//       ----------------------
+//       [----------------------]
+//              13:37                 time
+//       [----------------------]
 //          17° |  62  | 76%          values
 //         TEMP | BPM  | BATT         labels
-//            ~~^~~~~~~~~             bottom bar: heart-rate trace, status icons or a gauge
+//            _/\__/\_.               bottom bar: heart-rate trace, status icons or a gauge
 //
 // Nudge the numbers here to move things around.  The outer columns are hemmed
 // in by the round edge: they have room for a five-letter label and a value
@@ -66,11 +66,22 @@ const ICON_RIGHT_X = 135;
 
 const TRACE_X = 77;              // bottom bar as a heart-rate trace
 const TRACE_Y = 177;
-const TRACE_W = 54;
+const TRACE_W = 54;              // one column per 5 minutes: 4.5 hours
 const TRACE_H = 12;
 
-const DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-const MONTH_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+// Ring geometry: radii of the three kinds of tick.
+const RING_OUTER = 102.5;
+const RING_LIT_INNER = 96.0;     // lit (gauge) ticks
+const RING_HOUR_INNER = 99.0;    // unlit hour marks
+const RING_SECOND_INNER = 95.0;  // the seconds tick
+
+// Day and month abbreviations, three letters each, back to back.
+const DAY_NAMES = "SUNMONTUEWEDTHUFRISAT";
+const MONTH_NAMES = "JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
+
+//! How long a weather report is reused before it is read again.  The watch
+//! itself only gets a new one from the phone every so often.
+const WEATHER_SECONDS = 600;
 
 //! Numeral styles.  The numbers match settings.xml.
 enum {
@@ -79,6 +90,14 @@ enum {
 }
 
 //! Draws the watch face.
+//!
+//! Battery: the watch redraws once a minute, and every second for about ten
+//! seconds after you raise your wrist.  Anything that does not need to change
+//! every second - reading activity data, formatting the fields and the date,
+//! working out the gauges - is done in refresh(), once a minute and once per
+//! wrist raise.  Only the clock, the seconds tick, the blinking colon and the
+//! heart rate are updated every second.  The heart-rate trace is only
+//! recalculated every five minutes.
 class ApogeeView extends WatchUi.WatchFace {
 
     private var _fontTime as WatchUi.FontResource;
@@ -86,31 +105,43 @@ class ApogeeView extends WatchUi.WatchFace {
     private var _fontLabel as WatchUi.FontResource;
     private var _fontDate as WatchUi.FontResource;
 
-    // Direction of each of the 60 ring ticks, worked out once.
-    private var _tickCos as Array<Float>;
-    private var _tickSin as Array<Float>;
+    // End points (x1, y1, x2, y2) of every tick on the ring, worked out once
+    // so drawing the ring involves no maths.
+    private var _ringLit as ByteArray;       // 60 positions
+    private var _ringHour as ByteArray;      // 12 positions
+    private var _ringSecond as ByteArray;    // 60 positions
 
-    // Settings, cached so they are not re-read on every redraw.
+    // Settings, read when they change.
     private var _style as Number;
     private var _colors as Array<Number>;
     private var _fields as Array<Number>;
     private var _ringMode as Number = Data.GAUGE_STEPS;
-    private var _barMode as Number = Data.GAUGE_BATTERY;
+    private var _barMode as Number = Data.BAR_HEART_TRACE;
     private var _showSeconds as Boolean = true;
     private var _scanlines as Boolean = false;
+    private var _needsWeather as Boolean = false;
+    private var _hasHeartField as Boolean = false;
 
-    // Activity, settings and battery, read once per redraw.  The weather
-    // report inside it is only re-read once a minute.
+    // Data, refreshed once a minute and on each wrist raise.
     private var _snap as Data.Snapshot;
-    private var _weatherMinute as Number = -1;
+    private var _stale as Boolean = true;          // refresh at the next redraw
+    private var _dataMinute as Number = -1;        // minute of the last refresh
+    private var _weatherTime as Number = 0;        // when weather was last read; 0 = never
+    private var _texts as Array<Array<String> >;   // label and value of each field
+    private var _dateText as String = "";
+    private var _litTicks as Number = 0;           // ring gauge, in ticks (0-60)
+    private var _barLevel as Float = 0.0;          // bar gauge, 0.0-1.0
 
-    // The heart-rate trace is worked out once a minute, not on every redraw.
-    private var _trace as Array<Float>?;
-    private var _traceMinute as Number = -1;
+    // Heart-rate trace: running totals (updated with just the new readings
+    // when a new five-minute column begins) and the pixel heights drawn.
+    private var _heart as Data.HeartTrace?;
+    private var _trace as ByteArray?;
+    private var _tracePeriod as Number = -1;
 
     // True for the few seconds after you raise your wrist, when the watch
-    // redraws every second.  The rest of the time it redraws once a minute.
-    private var _awake as Boolean = true;
+    // redraws every second.  Starts false so a face that happens to start in
+    // low-power mode never shows a frozen seconds tick or a missing colon.
+    private var _awake as Boolean = false;
 
     function initialize() {
         WatchFace.initialize();
@@ -121,18 +152,34 @@ class ApogeeView extends WatchUi.WatchFace {
         _fontLabel = WatchUi.loadResource(Rez.Fonts.FontLabel) as WatchUi.FontResource;
         _fontDate = WatchUi.loadResource(Rez.Fonts.FontLabelBold) as WatchUi.FontResource;
 
-        _tickCos = new [60] as Array<Float>;
-        _tickSin = new [60] as Array<Float>;
+        _ringLit = new [240]b;
+        _ringHour = new [48]b;
+        _ringSecond = new [240]b;
         for (var i = 0; i < 60; i++) {
             var angle = Math.toRadians(i * 6 - 90);
-            _tickCos[i] = Math.cos(angle).toFloat();
-            _tickSin[i] = Math.sin(angle).toFloat();
+            var c = Math.cos(angle).toFloat();
+            var s = Math.sin(angle).toFloat();
+            storeTick(_ringLit, i, c, s, RING_LIT_INNER);
+            storeTick(_ringSecond, i, c, s, RING_SECOND_INNER);
+            if (i % 5 == 0) {
+                storeTick(_ringHour, i / 5, c, s, RING_HOUR_INNER);
+            }
         }
 
         _colors = Config.colors();
         _fields = [0, 0, 0, 0, 0, 0] as Array<Number>;
+        _texts = [["", ""], ["", ""], ["", ""], ["", ""], ["", ""], ["", ""]] as Array<Array<String> >;
         _snap = new Data.Snapshot();
         loadSettings();
+    }
+
+    //! Work out one tick's end points and store them at slot `index`.
+    private function storeTick(table as ByteArray, index as Number, c as Float, s as Float, inner as Float) as Void {
+        var k = index * 4;
+        table[k] = (RING_MID + inner * c + 0.5).toNumber();
+        table[k + 1] = (RING_MID + inner * s + 0.5).toNumber();
+        table[k + 2] = (RING_MID + RING_OUTER * c + 0.5).toNumber();
+        table[k + 3] = (RING_MID + RING_OUTER * s + 0.5).toNumber();
     }
 
     private function loadTimeFont(style as Number) as WatchUi.FontResource {
@@ -143,7 +190,8 @@ class ApogeeView extends WatchUi.WatchFace {
         return WatchUi.loadResource((style == STYLE_SQUARE) ? Rez.Fonts.FontDataSquare : Rez.Fonts.FontDataVhs) as WatchUi.FontResource;
     }
 
-    //! Re-read everything the user can configure.
+    //! Re-read everything the user can configure.  Caches are only thrown
+    //! away when the setting they depend on actually changed.
     function loadSettings() as Void {
         var style = Config.getNumber("NumeralStyle", STYLE_VHS);
         if (style != _style) {
@@ -163,19 +211,42 @@ class ApogeeView extends WatchUi.WatchFace {
         ] as Array<Number>;
         _ringMode = Config.getNumber("RingMode", Data.GAUGE_STEPS);
         _barMode = Config.getNumber("BarMode", Data.BAR_HEART_TRACE);
-        _traceMinute = -1;
-        _weatherMinute = -1;
         _showSeconds = Config.getBool("ShowSeconds", true);
         _scanlines = Config.getBool("Scanlines", false);
+
+        var needsWeather = false;
+        var hasHeart = false;
+        for (var i = 0; i < 6; i++) {
+            var type = _fields[i];
+            needsWeather = needsWeather || type == Data.FIELD_TEMP || type == Data.FIELD_RAIN
+                || type == Data.FIELD_WIND || type == Data.FIELD_SUN;
+            hasHeart = hasHeart || type == Data.FIELD_HEART;
+        }
+        if (needsWeather && !_needsWeather) {
+            _weatherTime = 0; // a weather field was just added: read it now
+        }
+        _needsWeather = needsWeather;
+        _hasHeartField = hasHeart;
+        if (_barMode != Data.BAR_HEART_TRACE) {
+            _heart = null; // not shown: free it
+            _trace = null;
+        }
+        _stale = true;
+        Config.changed = false;
     }
 
-    //! Called when the face comes back on screen, e.g. after the settings menu.
+    //! The face is back on screen (after a widget, a menu or a notification).
+    //! Settings are only re-read if something was changed in the menu.
     function onShow() as Void {
-        loadSettings();
+        if (Config.changed) {
+            loadSettings();
+        }
+        _stale = true;
     }
 
     function onExitSleep() as Void {
         _awake = true;
+        _stale = true; // fresh numbers for the person who just looked
         WatchUi.requestUpdate();
     }
 
@@ -187,32 +258,94 @@ class ApogeeView extends WatchUi.WatchFace {
     //! Redraw the whole face.
     function onUpdate(dc as Dc) as Void {
         var clock = System.getClockTime();
-        var settings = System.getDeviceSettings();
-        _snap.info = ActivityMonitor.getInfo();
-        _snap.settings = settings;
-        _snap.battery = System.getSystemStats().battery;
-        if (clock.min != _weatherMinute) {
-            _snap.weather = (Toybox has :Weather) ? Weather.getCurrentConditions() : null;
-            _weatherMinute = clock.min;
+        if (_stale || clock.min != _dataMinute) {
+            refresh(clock);
+        } else if (_hasHeartField && _awake) {
+            refreshHeart();
         }
 
         dc.setColor(_colors[Config.PART_BACKGROUND], _colors[Config.PART_BACKGROUND]);
         dc.clear();
 
         drawRing(dc, (_awake && _showSeconds) ? clock.sec : -1);
-        drawDate(dc, clock, settings.is24Hour);
+        dc.setColor(_colors[Config.PART_DATE], Graphics.COLOR_TRANSPARENT);
+        dc.drawText(SCREEN_MID, DATE_Y, _fontDate, _dateText, Graphics.TEXT_JUSTIFY_CENTER);
         drawFrame(dc);
         drawRow(dc, 0, TOP_LABEL_Y, TOP_VALUE_Y);
         drawRow(dc, 3, BOTTOM_LABEL_Y, BOTTOM_VALUE_Y);
-        drawTime(dc, clock, settings.is24Hour);
+        drawTime(dc, clock, _snap.settings.is24Hour);
         if (_barMode == Data.BAR_HEART_TRACE) {
-            drawTrace(dc, clock.min);
-            drawStatus(dc, settings);
+            drawTrace(dc);
+            drawStatus(dc);
         } else if (_barMode == Data.BAR_STATUS) {
-            drawStatusRow(dc, settings);
+            drawStatusRow(dc);
         } else {
             drawBar(dc);
-            drawStatus(dc, settings);
+            drawStatus(dc);
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Data
+    // ---------------------------------------------------------------------
+
+    //! Read the watch's data and work out everything drawn from it.
+    private function refresh(clock as System.ClockTime) as Void {
+        _snap.info = ActivityMonitor.getInfo();
+        _snap.settings = System.getDeviceSettings();
+        _snap.battery = System.getSystemStats().battery;
+
+        var now = Time.now().value();
+        if (!_needsWeather) {
+            _snap.weather = null;
+        } else if (_weatherTime == 0 || now - _weatherTime >= WEATHER_SECONDS) {
+            _snap.weather = (Toybox has :Weather) ? Weather.getCurrentConditions() : null;
+            _weatherTime = now;
+        }
+
+        for (var slot = 0; slot < 6; slot++) {
+            var type = _fields[slot];
+            if (type != Data.FIELD_NONE) {
+                _texts[slot] = Data.field(type, slot % 3 == 1, _snap);
+            }
+        }
+
+        var today = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
+        var d = ((today.day_of_week as Number) - 1) * 3;
+        var m = ((today.month as Number) - 1) * 3;
+        var text = (DAY_NAMES.substring(d, d + 3) as String) + " " + today.day.format("%02d") + " "
+            + (MONTH_NAMES.substring(m, m + 3) as String);
+        if (!_snap.settings.is24Hour) {
+            text += (clock.hour < 12) ? " AM" : " PM";
+        }
+        _dateText = text;
+
+        _litTicks = (Data.gauge(_ringMode, _snap) * 60 + 0.5).toNumber();
+        _barLevel = (_barMode <= Data.GAUGE_ACTIVE) ? Data.gauge(_barMode, _snap) : 0.0;
+
+        if (_barMode == Data.BAR_HEART_TRACE) {
+            var period = now / Data.TRACE_COLUMN_SECONDS;
+            if (_heart == null) {
+                _heart = new Data.HeartTrace(TRACE_W);
+            }
+            if (period != _tracePeriod || _trace == null) {
+                var heart = _heart as Data.HeartTrace;
+                heart.update(period);
+                _trace = heart.pixels(TRACE_H);
+                _tracePeriod = period;
+            }
+        }
+
+        _dataMinute = clock.min;
+        _stale = false;
+    }
+
+    //! While the watch is awake the heart rate is kept live, every second.
+    private function refreshHeart() as Void {
+        for (var slot = 0; slot < 6; slot++) {
+            if (_fields[slot] == Data.FIELD_HEART) {
+                _texts[slot] = Data.field(Data.FIELD_HEART, slot % 3 == 1, _snap);
+            }
         }
     }
 
@@ -220,55 +353,38 @@ class ApogeeView extends WatchUi.WatchFace {
     // Outer ring
     // ---------------------------------------------------------------------
 
-    //! 60 positions around the edge.  Lit ticks (long, accent colour) show
-    //! the ring gauge; past them only the twelve hour marks are drawn.
-    //! second: 0-59 to show the seconds marker, or -1 to hide it.
+    //! Lit ticks (long, accent colour) show the ring gauge; past them only
+    //! the twelve hour marks are drawn.
+    //! second: 0-59 to show the seconds tick, or -1 to hide it.
     private function drawRing(dc as Dc, second as Number) as Void {
-        var lit = (Data.gauge(_ringMode, _snap) * 60 + 0.5).toNumber();
+        var lit = _litTicks;
+        var t = _ringLit;
 
         dc.setPenWidth(2);
         dc.setColor(_colors[Config.PART_ACCENT], Graphics.COLOR_TRANSPARENT);
-        for (var i = 0; i < lit; i++) {
-            drawTick(dc, i, 96.0, 102.5);
+        for (var k = 0; k < lit * 4; k += 4) {
+            dc.drawLine(t[k], t[k + 1], t[k + 2], t[k + 3]);
         }
 
+        t = _ringHour;
         dc.setColor(_colors[Config.PART_RING], Graphics.COLOR_TRANSPARENT);
-        for (var i = lit + (5 - lit % 5) % 5; i < 60; i += 5) {
-            drawTick(dc, i, 99.0, 102.5);
+        for (var k = ((lit + 4) / 5) * 4; k < 48; k += 4) {
+            dc.drawLine(t[k], t[k + 1], t[k + 2], t[k + 3]);
         }
 
         if (second >= 0) {
+            t = _ringSecond;
+            var k = second * 4;
             dc.setPenWidth(4);
             dc.setColor(_colors[Config.PART_HOURS], Graphics.COLOR_TRANSPARENT);
-            drawTick(dc, second, 95.0, 102.5);
+            dc.drawLine(t[k], t[k + 1], t[k + 2], t[k + 3]);
         }
         dc.setPenWidth(1);
     }
 
-    //! One radial line of the ring, from radius inner to radius outer.
-    private function drawTick(dc as Dc, index as Number, inner as Float, outer as Float) as Void {
-        var c = _tickCos[index];
-        var s = _tickSin[index];
-        dc.drawLine(
-            (RING_MID + inner * c + 0.5).toNumber(), (RING_MID + inner * s + 0.5).toNumber(),
-            (RING_MID + outer * c + 0.5).toNumber(), (RING_MID + outer * s + 0.5).toNumber());
-    }
-
     // ---------------------------------------------------------------------
-    // Date, dividers, data fields
+    // Dividers and data fields
     // ---------------------------------------------------------------------
-
-    //! "MON 16 NOV", plus AM/PM when the watch is set to 12-hour time.
-    private function drawDate(dc as Dc, clock as System.ClockTime, is24Hour as Boolean) as Void {
-        var today = Gregorian.info(Time.now(), Time.FORMAT_SHORT);
-        var text = DAY_NAMES[(today.day_of_week as Number) - 1] + " " + today.day.format("%02d") + " "
-            + MONTH_NAMES[(today.month as Number) - 1];
-        if (!is24Hour) {
-            text += (clock.hour < 12) ? " AM" : " PM";
-        }
-        dc.setColor(_colors[Config.PART_DATE], Graphics.COLOR_TRANSPARENT);
-        dc.drawText(SCREEN_MID, DATE_Y, _fontDate, text, Graphics.TEXT_JUSTIFY_CENTER);
-    }
 
     //! The two horizontal rules, and a short vertical rule wherever two
     //! neighbouring fields are both in use.
@@ -308,18 +424,18 @@ class ApogeeView extends WatchUi.WatchFace {
 
     //! Three fields side by side, starting at slot first (0 = top row, 3 = bottom row).
     private function drawRow(dc as Dc, first as Number, labelY as Number, valueY as Number) as Void {
-        drawField(dc, _fields[first], false, SIDE_LEFT_X, labelY, valueY);
-        drawField(dc, _fields[first + 1], true, SCREEN_MID, labelY, valueY);
-        drawField(dc, _fields[first + 2], false, SIDE_RIGHT_X, labelY, valueY);
+        drawField(dc, first, SIDE_LEFT_X, labelY, valueY);
+        drawField(dc, first + 1, SCREEN_MID, labelY, valueY);
+        drawField(dc, first + 2, SIDE_RIGHT_X, labelY, valueY);
     }
 
     //! One data field: a small label and a larger value, both centred on x.
-    //! wide: true for the middle column, which has room for longer values.
-    private function drawField(dc as Dc, type as Number, wide as Boolean, x as Number, labelY as Number, valueY as Number) as Void {
+    private function drawField(dc as Dc, slot as Number, x as Number, labelY as Number, valueY as Number) as Void {
+        var type = _fields[slot];
         if (type == Data.FIELD_NONE) {
             return;
         }
-        var content = Data.field(type, wide, _snap);
+        var content = _texts[slot];
         dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, labelY, _fontLabel, content[0], Graphics.TEXT_JUSTIFY_CENTER);
         var low = (type == Data.FIELD_BATTERY && _snap.batteryLow());
@@ -386,8 +502,7 @@ class ApogeeView extends WatchUi.WatchFace {
         if (_barMode == Data.GAUGE_OFF) {
             return;
         }
-        var level = Data.gauge(_barMode, _snap);
-        var full = (level * 10 + 0.99).toNumber();
+        var full = (_barLevel * 10 + 0.99).toNumber();
         var color = _colors[Config.PART_ACCENT];
         if (_barMode == Data.GAUGE_BATTERY && _snap.batteryLow()) {
             color = warningColor();
@@ -405,34 +520,34 @@ class ApogeeView extends WatchUi.WatchFace {
 
     //! The last few hours of heart rate as a line, like a bedside monitor,
     //! over a dotted baseline.  The newest reading is at the right, marked
-    //! with a dot.
-    private function drawTrace(dc as Dc, minute as Number) as Void {
-        if (minute != _traceMinute || _trace == null) {
-            _trace = Data.heartTrace(TRACE_W);
-            _traceMinute = minute;
-        }
-        var points = _trace as Array<Float>;
-
+    //! with a dot.  The pixel heights come ready-made from refresh().
+    private function drawTrace(dc as Dc) as Void {
         dc.setColor(_colors[Config.PART_LINES], Graphics.COLOR_TRANSPARENT);
         for (var x = TRACE_X; x < TRACE_X + TRACE_W; x += 3) {
             dc.drawPoint(x, TRACE_Y + TRACE_H + 1);
         }
 
+        var heights = _trace;
+        if (heights == null) {
+            return;
+        }
+        var bottom = TRACE_Y + TRACE_H - 1;
         dc.setColor(_colors[Config.PART_ACCENT], Graphics.COLOR_TRANSPARENT);
         var prevX = -1;
         var prevY = 0;
         for (var i = 0; i < TRACE_W; i++) {
-            var value = points[i];
-            if (value < 0.0) {
+            var h = heights[i];
+            if (h == Data.NO_READING) {
                 prevX = -1; // gap in the readings: lift the pen
                 continue;
             }
             var x = TRACE_X + i;
-            var y = TRACE_Y + TRACE_H - 1 - (value * (TRACE_H - 1) + 0.5).toNumber();
+            var y = bottom - h;
             if (prevX >= 0) {
                 dc.drawLine(prevX, prevY, x, y);
+            } else {
+                dc.drawPoint(x, y);
             }
-            dc.drawPoint(x, y);
             prevX = x;
             prevY = y;
         }
@@ -444,7 +559,8 @@ class ApogeeView extends WatchUi.WatchFace {
     //! A centred row of small icons, each shown only while it applies:
     //! battery low (in red), phone link (crossed out when lost), alarm set,
     //! do not disturb, and unread notifications.
-    private function drawStatusRow(dc as Dc, settings as System.DeviceSettings) as Void {
+    private function drawStatusRow(dc as Dc) as Void {
+        var settings = _snap.settings;
         var icons = settings.phoneConnected ? "{" : "<";
         if (settings.alarmCount > 0) {
             icons += "  ^";
@@ -455,28 +571,27 @@ class ApogeeView extends WatchUi.WatchFace {
         if (settings.notificationCount > 0) {
             icons += "  >";
         }
-        var x = SCREEN_MID;
         if (_snap.batteryLow()) {
             // The battery icon goes first, in its own colour, so centre the
             // row as a whole.
             var battery = "|  ";
             var batteryWidth = dc.getTextWidthInPixels(battery, _fontLabel);
-            x = SCREEN_MID - (batteryWidth + dc.getTextWidthInPixels(icons, _fontLabel)) / 2;
+            var x = SCREEN_MID - (batteryWidth + dc.getTextWidthInPixels(icons, _fontLabel)) / 2;
             dc.setColor(warningColor(), Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, BAR_Y - 1, _fontLabel, battery, Graphics.TEXT_JUSTIFY_LEFT);
-            x += batteryWidth;
             dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
-            dc.drawText(x, BAR_Y - 1, _fontLabel, icons, Graphics.TEXT_JUSTIFY_LEFT);
+            dc.drawText(x + batteryWidth, BAR_Y - 1, _fontLabel, icons, Graphics.TEXT_JUSTIFY_LEFT);
             return;
         }
         dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
-        dc.drawText(x, BAR_Y - 1, _fontLabel, icons, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(SCREEN_MID, BAR_Y - 1, _fontLabel, icons, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     //! Small icons either side of the bar: phone link lost on the left; on
     //! the right a red battery when it is low, otherwise unread
     //! notifications.  Nothing is drawn when all is well.
-    private function drawStatus(dc as Dc, settings as System.DeviceSettings) as Void {
+    private function drawStatus(dc as Dc) as Void {
+        var settings = _snap.settings;
         dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
         if (!settings.phoneConnected) {
             dc.drawText(ICON_LEFT_X, BAR_Y - 1, _fontLabel, "<", Graphics.TEXT_JUSTIFY_LEFT);

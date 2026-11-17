@@ -41,8 +41,20 @@ module Data {
         BAR_STATUS
     }
 
-    //! How far back the heart-rate trace in the bottom bar reaches.
-    const TRACE_HOURS = 4;
+    //! The heart-rate trace in the bottom bar: one pixel column per five
+    //! minutes, so 54 columns cover the last four and a half hours.  It is
+    //! only recalculated when a new five-minute column begins.
+    const TRACE_COLUMN_SECONDS = 300;
+
+    //! At most this many heart-rate readings are read per update, newest
+    //! first.  Normally an update reads about five; only the first, when the
+    //! face starts, reads the whole window (about 270 at one a minute).  The
+    //! cap keeps a watch that stores readings more densely well inside the
+    //! watchdog's limit on work per redraw.
+    const TRACE_MAX_SAMPLES = 500;
+
+    //! Marks a trace column with no readings.
+    const NO_READING = 255;
 
     const NO_VALUE = "--";
 
@@ -138,70 +150,138 @@ module Data {
         return (value > 1.0) ? 1.0 : value;
     }
 
-    //! Heart rate over the last TRACE_HOURS, squeezed into `columns` points,
-    //! oldest first.  Each point runs from 0.0 (the lowest reading in that
-    //! period) to 1.0 (the highest), or is -1.0 where the watch has no reading.
-    function heartTrace(columns as Number) as Array<Float> {
-        var out = new [columns] as Array<Float>;
-        for (var i = 0; i < columns; i++) {
-            out[i] = -1.0;
+    //! The heart-rate trace: average heart rate per five-minute column.
+    //!
+    //! It keeps its running totals between updates, so each update only
+    //! reads the readings that arrived since the last one (about five) and
+    //! shifts the columns along.  The whole window is only read once, when
+    //! the face starts.
+    class HeartTrace {
+        private var _sums as Array<Number>;
+        private var _counts as Array<Number>;
+        private var _period as Number = -1;   // five-minute period of the newest column
+        private var _lastSeen as Number = 0;  // time of the newest reading already counted
+
+        function initialize(columns as Number) {
+            _sums = new [columns] as Array<Number>;
+            _counts = new [columns] as Array<Number>;
+            clear(0, columns);
         }
-        if (!(ActivityMonitor has :getHeartRateHistory)) {
+
+        private function clear(from as Number, to as Number) as Void {
+            for (var i = from; i < to; i++) {
+                _sums[i] = 0;
+                _counts[i] = 0;
+            }
+        }
+
+        //! Bring the columns up to date.  period: seconds since 1970 divided
+        //! by TRACE_COLUMN_SECONDS; the newest column is that period.
+        function update(period as Number) as Void {
+            var columns = _sums.size();
+            var start = (period + 1 - columns) * TRACE_COLUMN_SECONDS;
+            var shift = period - _period;
+            if (_period < 0 || shift < 0 || shift >= columns) {
+                clear(0, columns);
+                _lastSeen = start - 1;
+            } else if (shift > 0) {
+                for (var i = 0; i < columns - shift; i++) {
+                    _sums[i] = _sums[i + shift];
+                    _counts[i] = _counts[i + shift];
+                }
+                clear(columns - shift, columns);
+            }
+            _period = period;
+            if (_lastSeen < start - 1) {
+                _lastSeen = start - 1;
+            }
+            if (!(ActivityMonitor has :getHeartRateHistory)) {
+                return;
+            }
+
+            // Newest first, back to the last reading already counted.
+            var now = Time.now().value();
+            var back = now - _lastSeen + 60;
+            var history = ActivityMonitor.getHeartRateHistory(new Time.Duration(back), true);
+            var sample = history.next();
+            var newest = _lastSeen;
+            var seen = 0;
+            while (sample != null && seen < TRACE_MAX_SAMPLES) {
+                var when = sample.when;
+                if (when != null) {
+                    var t = when.value();
+                    if (t <= _lastSeen) {
+                        break; // already counted
+                    }
+                    var column = (t - start) / TRACE_COLUMN_SECONDS;
+                    if (column < columns) {
+                        // (A reading beyond the newest column is left for a
+                        // later update rather than marked as seen.)
+                        if (t > newest) {
+                            newest = t;
+                        }
+                        var bpm = sample.heartRate;
+                        if (bpm != null && bpm != ActivityMonitor.INVALID_HR_SAMPLE && column >= 0) {
+                            _sums[column] += bpm;
+                            _counts[column] += 1;
+                        }
+                    }
+                }
+                seen += 1;
+                sample = history.next();
+            }
+            _lastSeen = newest;
+        }
+
+        //! Average heart rate per column, scaled from 0.0 to 1.0, or -1.0
+        //! where there are no readings.
+        function levels() as Array<Float> {
+            var columns = _sums.size();
+            var out = new [columns] as Array<Float>;
+            var low = 999.0;
+            var high = 0.0;
+            for (var i = 0; i < columns; i++) {
+                if (_counts[i] > 0) {
+                    var bpm = _sums[i].toFloat() / _counts[i];
+                    out[i] = bpm;
+                    low = (bpm < low) ? bpm : low;
+                    high = (bpm > high) ? bpm : high;
+                } else {
+                    out[i] = -1.0;
+                }
+            }
+            if (high < low) {
+                return out; // no readings at all
+            }
+
+            // A quiet few hours (less than 30 bpm between lowest and highest)
+            // is not stretched to fill the height, so resting jitter stays a
+            // gentle wobble rather than looking like a workout.
+            var range = high - low;
+            if (range < 30.0) {
+                low -= (30.0 - range) / 2.0;
+                range = 30.0;
+            }
+            for (var i = 0; i < columns; i++) {
+                if (_counts[i] > 0) {
+                    out[i] = (out[i] - low) / range;
+                }
+            }
             return out;
         }
 
-        // Average the samples that fall into each column.
-        var span = TRACE_HOURS * 3600;
-        var start = Time.now().value() - span;
-        var sums = new [columns] as Array<Number>;
-        var counts = new [columns] as Array<Number>;
-        for (var i = 0; i < columns; i++) {
-            sums[i] = 0;
-            counts[i] = 0;
-        }
-        var history = ActivityMonitor.getHeartRateHistory(new Time.Duration(span), false);
-        var sample = history.next();
-        while (sample != null) {
-            var bpm = sample.heartRate;
-            var when = sample.when;
-            if (bpm != null && bpm != ActivityMonitor.INVALID_HR_SAMPLE && when != null) {
-                var column = ((when.value() - start).toLong() * columns / span).toNumber();
-                if (column >= 0 && column < columns) {
-                    sums[column] += bpm;
-                    counts[column] += 1;
-                }
+        //! The trace as pixel heights, ready to draw: one byte per column,
+        //! oldest first, from 0 (lowest) to height - 1 (highest), or
+        //! NO_READING.
+        function pixels(height as Number) as ByteArray {
+            var levels = levels();
+            var out = new [levels.size()]b;
+            for (var i = 0; i < levels.size(); i++) {
+                var level = levels[i];
+                out[i] = (level < 0.0) ? NO_READING : (level * (height - 1) + 0.5).toNumber();
             }
-            sample = history.next();
+            return out;
         }
-
-        var low = 999.0;
-        var high = 0.0;
-        for (var i = 0; i < columns; i++) {
-            if (counts[i] > 0) {
-                var bpm = sums[i].toFloat() / counts[i];
-                out[i] = bpm;
-                low = (bpm < low) ? bpm : low;
-                high = (bpm > high) ? bpm : high;
-            }
-        }
-        if (high < low) {
-            return out; // no readings at all
-        }
-
-        // Scale to 0..1.  A quiet few hours (less than 30 bpm between lowest
-        // and highest) is not stretched to fill the height, so resting
-        // jitter stays a gentle wobble rather than looking like a workout.
-        var range = high - low;
-        if (range < 30.0) {
-            low -= (30.0 - range) / 2.0;
-            range = 30.0;
-        }
-        for (var i = 0; i < columns; i++) {
-            if (counts[i] > 0) {
-                out[i] = (out[i] - low) / range;
-            }
-        }
-        return out;
     }
 
     // ---------------------------------------------------------------------

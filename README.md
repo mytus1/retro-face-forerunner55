@@ -28,7 +28,7 @@ The numerals come in two styles you can switch between on the watch: **VHS**
      ----------------------
         17° |  62  | 76%        three more data fields
        TEMP | BPM  | BATT
-         _/\__/\_.             bottom bar   your heart rate over the last 4 hours
+         _/\__/\_.             bottom bar   your heart rate over the last 4½ hours
 ```
 
 - **Data fields** – each of the six can show any of these, or be left empty:
@@ -54,7 +54,8 @@ The numerals come in two styles you can switch between on the watch: **VHS**
   watch receives from your phone, for wherever the phone is. They show `--`
   until the watch has synced with Garmin Connect.
 - **Bottom bar** – by default a small trace of your heart rate over the last
-  four hours, like a bedside monitor, with a dot on the latest reading. It can
+  4½ hours, like a bedside monitor, with a dot on the latest reading. Each
+  pixel is five minutes, and it moves on every five minutes. It can
   instead show **status icons** (phone connected or lost, alarm set,
   do-not-disturb, unread messages – each only while it applies), or a gauge.
 - **Scanlines** (off by default) – thin dark lines run through the time

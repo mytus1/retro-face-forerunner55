@@ -20,105 +20,125 @@ import Toybox.WatchUi;
 // -------------------------------------------------------------------------
 
 // Names shown in the lists.  The order must match the numbers in settings.xml.
-const THEME_NAMES = [
-    Rez.Strings.ThemeCustom,
-    Rez.Strings.ThemeAmber,
-    Rez.Strings.ThemeIce,
-    Rez.Strings.ThemePhosphor,
-    Rez.Strings.ThemeRedline,
-    Rez.Strings.ThemeSynthwave,
-    Rez.Strings.ThemeMono,
-    Rez.Strings.ThemeDaylight,
-    Rez.Strings.ThemeBlueprint,
-    Rez.Strings.ThemeSodium,
-    Rez.Strings.ThemeInverse
-] as Array<ResourceId>;
+// They are functions rather than constants so the lists only take up memory
+// while the menu is open, not all the time the face is running.
+function themeNames() as Array<ResourceId> {
+    return [
+        Rez.Strings.ThemeCustom,
+        Rez.Strings.ThemeAmber,
+        Rez.Strings.ThemeIce,
+        Rez.Strings.ThemePhosphor,
+        Rez.Strings.ThemeRedline,
+        Rez.Strings.ThemeSynthwave,
+        Rez.Strings.ThemeMono,
+        Rez.Strings.ThemeDaylight,
+        Rez.Strings.ThemeBlueprint,
+        Rez.Strings.ThemeSodium,
+        Rez.Strings.ThemeInverse
+    ] as Array<ResourceId>;
+}
 
-const COLOR_NAMES = [
-    Rez.Strings.Black,
-    Rez.Strings.White,
-    Rez.Strings.Red,
-    Rez.Strings.Yellow,
-    Rez.Strings.Green,
-    Rez.Strings.Cyan,
-    Rez.Strings.Blue,
-    Rez.Strings.Magenta
-] as Array<ResourceId>;
+function colorNames() as Array<ResourceId> {
+    return [
+        Rez.Strings.Black,
+        Rez.Strings.White,
+        Rez.Strings.Red,
+        Rez.Strings.Yellow,
+        Rez.Strings.Green,
+        Rez.Strings.Cyan,
+        Rez.Strings.Blue,
+        Rez.Strings.Magenta
+    ] as Array<ResourceId>;
+}
 
-const PART_NAMES = [
-    Rez.Strings.ColorBackground,
-    Rez.Strings.ColorHours,
-    Rez.Strings.ColorMinutes,
-    Rez.Strings.ColorDate,
-    Rez.Strings.ColorValues,
-    Rez.Strings.ColorLabels,
-    Rez.Strings.ColorLines,
-    Rez.Strings.ColorRing,
-    Rez.Strings.ColorAccent
-] as Array<ResourceId>;
+function partNames() as Array<ResourceId> {
+    return [
+        Rez.Strings.ColorBackground,
+        Rez.Strings.ColorHours,
+        Rez.Strings.ColorMinutes,
+        Rez.Strings.ColorDate,
+        Rez.Strings.ColorValues,
+        Rez.Strings.ColorLabels,
+        Rez.Strings.ColorLines,
+        Rez.Strings.ColorRing,
+        Rez.Strings.ColorAccent
+    ] as Array<ResourceId>;
+}
 
-const STYLE_NAMES = [
-    Rez.Strings.StyleVhs,
-    Rez.Strings.StyleSquare
-] as Array<ResourceId>;
+function styleNames() as Array<ResourceId> {
+    return [
+        Rez.Strings.StyleVhs,
+        Rez.Strings.StyleSquare
+    ] as Array<ResourceId>;
+}
 
 // The six field slots, in the order ApogeeView draws them.
-const FIELD_KEYS = [
-    "FieldTopLeft",
-    "FieldTopCenter",
-    "FieldTopRight",
-    "FieldBottomLeft",
-    "FieldBottomCenter",
-    "FieldBottomRight"
-] as Array<String>;
+function fieldKeys() as Array<String> {
+    return [
+        "FieldTopLeft",
+        "FieldTopCenter",
+        "FieldTopRight",
+        "FieldBottomLeft",
+        "FieldBottomCenter",
+        "FieldBottomRight"
+    ] as Array<String>;
+}
 
-const SLOT_NAMES = [
-    Rez.Strings.FieldTopLeft,
-    Rez.Strings.FieldTopCenter,
-    Rez.Strings.FieldTopRight,
-    Rez.Strings.FieldBottomLeft,
-    Rez.Strings.FieldBottomCenter,
-    Rez.Strings.FieldBottomRight
-] as Array<ResourceId>;
+function slotNames() as Array<ResourceId> {
+    return [
+        Rez.Strings.FieldTopLeft,
+        Rez.Strings.FieldTopCenter,
+        Rez.Strings.FieldTopRight,
+        Rez.Strings.FieldBottomLeft,
+        Rez.Strings.FieldBottomCenter,
+        Rez.Strings.FieldBottomRight
+    ] as Array<ResourceId>;
+}
 
-const FIELD_NAMES = [
-    Rez.Strings.FieldNone,
-    Rez.Strings.FieldSteps,
-    Rez.Strings.FieldHeart,
-    Rez.Strings.FieldBattery,
-    Rez.Strings.FieldDistance,
-    Rez.Strings.FieldCalories,
-    Rez.Strings.FieldActive,
-    Rez.Strings.FieldAlerts,
-    Rez.Strings.FieldTemp,
-    Rez.Strings.FieldSun,
-    Rez.Strings.FieldRecovery,
-    Rez.Strings.FieldRain,
-    Rez.Strings.FieldWind,
-    Rez.Strings.FieldVo2,
-    Rez.Strings.FieldRestingHr
-] as Array<ResourceId>;
+function fieldNames() as Array<ResourceId> {
+    return [
+        Rez.Strings.FieldNone,
+        Rez.Strings.FieldSteps,
+        Rez.Strings.FieldHeart,
+        Rez.Strings.FieldBattery,
+        Rez.Strings.FieldDistance,
+        Rez.Strings.FieldCalories,
+        Rez.Strings.FieldActive,
+        Rez.Strings.FieldAlerts,
+        Rez.Strings.FieldTemp,
+        Rez.Strings.FieldSun,
+        Rez.Strings.FieldRecovery,
+        Rez.Strings.FieldRain,
+        Rez.Strings.FieldWind,
+        Rez.Strings.FieldVo2,
+        Rez.Strings.FieldRestingHr
+    ] as Array<ResourceId>;
+}
 
-const GAUGE_NAMES = [
-    Rez.Strings.GaugeOff,
-    Rez.Strings.GaugeSteps,
-    Rez.Strings.GaugeBattery,
-    Rez.Strings.GaugeActive
-] as Array<ResourceId>;
+function gaugeNames() as Array<ResourceId> {
+    return [
+        Rez.Strings.GaugeOff,
+        Rez.Strings.GaugeSteps,
+        Rez.Strings.GaugeBattery,
+        Rez.Strings.GaugeActive
+    ] as Array<ResourceId>;
+}
 
 // The "Theme" row of the top-level menu, kept so its sub-label can be switched
 // to "Custom" when a colour is edited further down.
 var gThemeItem as WatchUi.MenuItem? = null;
 
 // The bottom bar has two extra choices on top of the gauges.
-const BAR_NAMES = [
-    Rez.Strings.GaugeOff,
-    Rez.Strings.GaugeSteps,
-    Rez.Strings.GaugeBattery,
-    Rez.Strings.GaugeActive,
-    Rez.Strings.BarHeartTrace,
-    Rez.Strings.BarStatus
-] as Array<ResourceId>;
+function barNames() as Array<ResourceId> {
+    return [
+        Rez.Strings.GaugeOff,
+        Rez.Strings.GaugeSteps,
+        Rez.Strings.GaugeBattery,
+        Rez.Strings.GaugeActive,
+        Rez.Strings.BarHeartTrace,
+        Rez.Strings.BarStatus
+    ] as Array<ResourceId>;
+}
 
 //! Look up a name, falling back to the first entry for out-of-range values.
 function nameAt(names as Array<ResourceId>, index as Number) as ResourceId {
@@ -130,13 +150,13 @@ class SettingsMenu extends WatchUi.Menu2 {
 
     function initialize() {
         Menu2.initialize({ :title => Rez.Strings.AppName });
-        gThemeItem = new WatchUi.MenuItem(Rez.Strings.ThemeTitle, nameAt(THEME_NAMES, Config.theme()), :theme, null);
+        gThemeItem = new WatchUi.MenuItem(Rez.Strings.ThemeTitle, nameAt(themeNames(), Config.theme()), :theme, null);
         addItem(gThemeItem as WatchUi.MenuItem);
-        addItem(new WatchUi.MenuItem(Rez.Strings.StyleTitle, nameAt(STYLE_NAMES, Config.getNumber("NumeralStyle", 0)), :style, null));
+        addItem(new WatchUi.MenuItem(Rez.Strings.StyleTitle, nameAt(styleNames(), Config.getNumber("NumeralStyle", 0)), :style, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.ColorsTitle, null, :colors, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.FieldsTitle, null, :fields, null));
-        addItem(new WatchUi.MenuItem(Rez.Strings.RingTitle, nameAt(GAUGE_NAMES, Config.getNumber("RingMode", 1)), :ring, null));
-        addItem(new WatchUi.MenuItem(Rez.Strings.BarTitle, nameAt(BAR_NAMES, Config.getNumber("BarMode", 4)), :bar, null));
+        addItem(new WatchUi.MenuItem(Rez.Strings.RingTitle, nameAt(gaugeNames(), Config.getNumber("RingMode", 1)), :ring, null));
+        addItem(new WatchUi.MenuItem(Rez.Strings.BarTitle, nameAt(barNames(), Config.getNumber("BarMode", 4)), :bar, null));
         addItem(new WatchUi.ToggleMenuItem(Rez.Strings.SecondsTitle, null, :seconds, Config.getBool("ShowSeconds", true), null));
         addItem(new WatchUi.ToggleMenuItem(Rez.Strings.ScanTitle, null, :scan, Config.getBool("Scanlines", false), null));
     }
@@ -149,30 +169,45 @@ class SettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
         Menu2InputDelegate.initialize();
     }
 
+    //! Leaving the menu: let go of the Theme row so it can be freed.
+    function onBack() as Void {
+        gThemeItem = null;
+        WatchUi.popView(WatchUi.SLIDE_RIGHT);
+    }
+
     function onSelect(item as WatchUi.MenuItem) as Void {
         var id = item.getId();
         if (id == :theme) {
-            pushChoice(Rez.Strings.ThemeTitle, THEME_NAMES, Config.theme(), new ChoiceDelegate("Theme", -1, THEME_NAMES, item));
+            var names = themeNames();
+            pushChoice(Rez.Strings.ThemeTitle, names, Config.theme(), new ChoiceDelegate("Theme", -1, names, item));
         } else if (id == :style) {
-            pushChoice(Rez.Strings.StyleTitle, STYLE_NAMES, Config.getNumber("NumeralStyle", 0), new ChoiceDelegate("NumeralStyle", -1, STYLE_NAMES, item));
+            var names = styleNames();
+            pushChoice(Rez.Strings.StyleTitle, names, Config.getNumber("NumeralStyle", 0), new ChoiceDelegate("NumeralStyle", -1, names, item));
         } else if (id == :ring) {
-            pushChoice(Rez.Strings.RingTitle, GAUGE_NAMES, Config.getNumber("RingMode", 1), new ChoiceDelegate("RingMode", -1, GAUGE_NAMES, item));
+            var names = gaugeNames();
+            pushChoice(Rez.Strings.RingTitle, names, Config.getNumber("RingMode", 1), new ChoiceDelegate("RingMode", -1, names, item));
         } else if (id == :bar) {
-            pushChoice(Rez.Strings.BarTitle, BAR_NAMES, Config.getNumber("BarMode", 4), new ChoiceDelegate("BarMode", -1, BAR_NAMES, item));
+            var names = barNames();
+            pushChoice(Rez.Strings.BarTitle, names, Config.getNumber("BarMode", 4), new ChoiceDelegate("BarMode", -1, names, item));
         } else if (id == :seconds) {
             Config.setValue("ShowSeconds", (item as WatchUi.ToggleMenuItem).isEnabled());
         } else if (id == :scan) {
             Config.setValue("Scanlines", (item as WatchUi.ToggleMenuItem).isEnabled());
         } else if (id == :colors) {
             var menu = new WatchUi.Menu2({ :title => Rez.Strings.ColorsTitle });
-            for (var part = 0; part < PART_NAMES.size(); part++) {
-                menu.addItem(new WatchUi.MenuItem(PART_NAMES[part], nameAt(COLOR_NAMES, Config.colorIndex(part)), part, null));
+            var parts = partNames();
+            var colors = colorNames();
+            for (var part = 0; part < parts.size(); part++) {
+                menu.addItem(new WatchUi.MenuItem(parts[part], nameAt(colors, Config.colorIndex(part)), part, null));
             }
             WatchUi.pushView(menu, new GroupDelegate(true), WatchUi.SLIDE_LEFT);
         } else if (id == :fields) {
             var menu = new WatchUi.Menu2({ :title => Rez.Strings.FieldsMenuTitle });
-            for (var slot = 0; slot < SLOT_NAMES.size(); slot++) {
-                menu.addItem(new WatchUi.MenuItem(SLOT_NAMES[slot], nameAt(FIELD_NAMES, Config.getNumber(FIELD_KEYS[slot], 0)), slot, null));
+            var slots = slotNames();
+            var fields = fieldNames();
+            var keys = fieldKeys();
+            for (var slot = 0; slot < slots.size(); slot++) {
+                menu.addItem(new WatchUi.MenuItem(slots[slot], nameAt(fields, Config.getNumber(keys[slot], 0)), slot, null));
             }
             WatchUi.pushView(menu, new GroupDelegate(false), WatchUi.SLIDE_LEFT);
         }
@@ -193,9 +228,12 @@ class GroupDelegate extends WatchUi.Menu2InputDelegate {
     function onSelect(item as WatchUi.MenuItem) as Void {
         var row = item.getId() as Number;
         if (_isColors) {
-            pushChoice(Rez.Strings.ColorTitle, COLOR_NAMES, Config.colorIndex(row), new ChoiceDelegate("", row, COLOR_NAMES, item));
+            var names = colorNames();
+            pushChoice(Rez.Strings.ColorTitle, names, Config.colorIndex(row), new ChoiceDelegate("", row, names, item));
         } else {
-            pushChoice(Rez.Strings.FieldTitle, FIELD_NAMES, Config.getNumber(FIELD_KEYS[row], 0), new ChoiceDelegate(FIELD_KEYS[row], -1, FIELD_NAMES, item));
+            var names = fieldNames();
+            var key = fieldKeys()[row];
+            pushChoice(Rez.Strings.FieldTitle, names, Config.getNumber(key, 0), new ChoiceDelegate(key, -1, names, item));
         }
     }
 }

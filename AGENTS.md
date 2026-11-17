@@ -29,7 +29,7 @@ Verified in Garmin's simulator (SDK 9.3.0, device `fr55`, CIQ 3.4.2):
 - 24 h and 12 h modes; empty field slots; status icons
 - the on-watch settings menu: every level opens, choices are stored and applied
 - `dist/Apogee.prg` (the release build that is committed) loads and runs
-- peak memory about 29 kB of the 96 kB a watch face gets
+- memory about 36 KB of the 92 KB a watch face gets
 
 **Not verified: anything on a physical watch.** In particular nobody has yet
 confirmed (a) how legible the 7 px labels are on the real screen, (b) the exact
@@ -42,28 +42,50 @@ exercised after a Connect IQ Store upload, so they are untested.
 
 ## Code notes
 
-- `Data.Snapshot` holds the activity info, device settings, battery and
-  weather report. `ApogeeView.onUpdate` refreshes it once per redraw (weather
-  once a minute) and every field and gauge reads from it - do not call
-  `ActivityMonitor.getInfo()` or `Weather.getCurrentConditions()` per field.
+- **Battery design.** The watch redraws once a minute, and every second for
+  ~10 s after a wrist raise. `ApogeeView.refresh()` does everything that need
+  not change every second - reads `Data.Snapshot` (activity info, device
+  settings, battery, weather), formats the six fields and the date, works out
+  both gauges - once a minute and once per wrist raise (`_stale`). Per-second
+  redraws only draw from those caches, plus the live heart-rate field, the
+  clock, the seconds tick and the blinking colon. Keep new features on the
+  right side of that line.
+- Weather is only read when a weather field is shown, at most every 10 min.
+- Ring tick end points are precomputed into ByteArrays; no trig per frame.
+- `Data.HeartTrace` keeps running per-column totals for the bottom-bar trace
+  (54 columns x 5 min). Each update shifts columns and reads only readings
+  newer than the last one counted - about five. The whole window is read once,
+  at start-up, capped at `TRACE_MAX_SAMPLES`. Verified in the simulator to
+  match a full recalculation exactly.
+- Settings are only re-read in `onShow` if `Config.changed` is set (any
+  `Config.setValue` sets it); caches are only discarded when the setting they
+  depend on changed. Phone changes arrive via `onSettingsChanged`.
+- `_awake` starts false so a face started in low-power mode cannot freeze the
+  seconds tick or hide the colon for a minute.
+- Menu name lists are functions (built while the menu is open), and themes are
+  9-letter strings, to keep permanent memory down.
 - Warnings use `warningColor()`: red, unless the background is red.
 
 ## Performance notes (measured in the simulator, 17 Nov 2026)
 
 Timings are from the simulator on a PC, so only the proportions mean
-anything. The watchdog limit is 120,000 instructions per redraw.
+anything. The watchdog limit is 120,000 instructions per redraw; a full read
+of the heart-rate history is about a fifth of it, which is why it only
+happens once.
 
-| Part of a redraw              | Time      |
-| ----------------------------- | --------- |
-| `Data.heartTrace` (240 samples) | ~3.7 ms; 5 calls in one redraw trip the watchdog |
-| `drawTrace` (cached points)   | ~0.7 ms   |
-| six data fields               | ~0.25 ms  |
-| time                          | ~0.2 ms   |
-| ring                          | ~0.15 ms  |
-| weather / settings / activity reads | below 1 ms for 20 calls |
+| Work                              | Before the efficiency pass | After |
+| --------------------------------- | -------------------------- | ----- |
+| heart trace, per update           | ~3.7 ms, every minute      | ~0.05 ms, every 5 min (one full read at start-up, ~7 ms) |
+| full draw, each second while awake | ~1.4 ms                   | ~0.65 ms |
+| data reading and formatting       | every redraw               | once a minute + once per wrist raise (~0.2 ms) |
+| ring                              | ~0.15 ms                   | ~0.05 ms |
+| trace drawing                     | ~0.7 ms                    | ~0.35 ms |
 
-Memory: 35.7 KB of 91.8 KB. The compiler's default is already its highest
-optimisation level (`-O 2` and `-O 3` produce identical output).
+The efficiency pass produced pixel-identical output (checked by image diff).
+Memory: 35.8 KB of 91.8 KB - unchanged, because the new caches use about what
+the smaller menu lists and theme table freed. The compiler's default is
+already its highest optimisation level (`-O 2` and `-O 3` produce identical
+output).
 
 ## Hard constraints of the device
 
