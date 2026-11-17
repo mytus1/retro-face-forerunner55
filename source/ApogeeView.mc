@@ -18,7 +18,7 @@ import Toybox.WatchUi;
 //       ----------------------
 //          17° |  62  | 76%          values
 //         TEMP | BPM  | BATT         labels
-//            ||||||||....            bottom bar: a second gauge
+//            ~~^~~~~~~~~             bottom bar: heart-rate trace, status icons or a gauge
 //
 // Nudge the numbers here to move things around.  The outer columns are hemmed
 // in by the round edge: they have room for a five-letter label and a value
@@ -55,6 +55,11 @@ const BAR_SEGMENT_W = 3;
 const BAR_SEGMENT_H = 6;
 const BAR_SEGMENT_STEP = 5;
 
+const TRACE_X = 77;              // bottom bar as a heart-rate trace
+const TRACE_Y = 177;
+const TRACE_W = 54;
+const TRACE_H = 12;
+
 const DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTH_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
@@ -83,6 +88,10 @@ class ApogeeView extends WatchUi.WatchFace {
     private var _ringMode as Number = Data.GAUGE_STEPS;
     private var _barMode as Number = Data.GAUGE_BATTERY;
     private var _showSeconds as Boolean = true;
+
+    // The heart-rate trace is worked out once a minute, not on every redraw.
+    private var _trace as Array<Float>?;
+    private var _traceMinute as Number = -1;
 
     // True for the few seconds after you raise your wrist, when the watch
     // redraws every second.  The rest of the time it redraws once a minute.
@@ -137,7 +146,8 @@ class ApogeeView extends WatchUi.WatchFace {
             Config.getNumber("FieldBottomRight", Data.FIELD_BATTERY)
         ] as Array<Number>;
         _ringMode = Config.getNumber("RingMode", Data.GAUGE_STEPS);
-        _barMode = Config.getNumber("BarMode", Data.GAUGE_BATTERY);
+        _barMode = Config.getNumber("BarMode", Data.BAR_HEART_TRACE);
+        _traceMinute = -1;
         _showSeconds = Config.getBool("ShowSeconds", true);
     }
 
@@ -170,8 +180,15 @@ class ApogeeView extends WatchUi.WatchFace {
         drawRow(dc, 0, TOP_LABEL_Y, TOP_VALUE_Y);
         drawRow(dc, 3, BOTTOM_LABEL_Y, BOTTOM_VALUE_Y);
         drawTime(dc, clock, settings.is24Hour);
-        drawBar(dc);
-        drawStatus(dc, settings);
+        if (_barMode == Data.BAR_HEART_TRACE) {
+            drawTrace(dc, clock.min);
+            drawStatus(dc, settings);
+        } else if (_barMode == Data.BAR_STATUS) {
+            drawStatusRow(dc, settings);
+        } else {
+            drawBar(dc);
+            drawStatus(dc, settings);
+        }
     }
 
     // ---------------------------------------------------------------------
@@ -339,6 +356,62 @@ class ApogeeView extends WatchUi.WatchFace {
                 dc.fillRectangle(x, BAR_Y + BAR_SEGMENT_H - 2, BAR_SEGMENT_W, 2);
             }
         }
+    }
+
+    //! The last few hours of heart rate as a line, like a bedside monitor,
+    //! over a dotted baseline.  The newest reading is at the right, marked
+    //! with a dot.
+    private function drawTrace(dc as Dc, minute as Number) as Void {
+        if (minute != _traceMinute || _trace == null) {
+            _trace = Data.heartTrace(TRACE_W);
+            _traceMinute = minute;
+        }
+        var points = _trace as Array<Float>;
+
+        dc.setColor(_colors[Config.PART_LINES], Graphics.COLOR_TRANSPARENT);
+        for (var x = TRACE_X; x < TRACE_X + TRACE_W; x += 3) {
+            dc.drawPoint(x, TRACE_Y + TRACE_H + 1);
+        }
+
+        dc.setColor(_colors[Config.PART_ACCENT], Graphics.COLOR_TRANSPARENT);
+        var prevX = -1;
+        var prevY = 0;
+        for (var i = 0; i < TRACE_W; i++) {
+            var value = points[i];
+            if (value < 0.0) {
+                prevX = -1; // gap in the readings: lift the pen
+                continue;
+            }
+            var x = TRACE_X + i;
+            var y = TRACE_Y + TRACE_H - 1 - (value * (TRACE_H - 1) + 0.5).toNumber();
+            if (prevX >= 0) {
+                dc.drawLine(prevX, prevY, x, y);
+            }
+            dc.drawPoint(x, y);
+            prevX = x;
+            prevY = y;
+        }
+        if (prevX >= 0) {
+            dc.fillRectangle(prevX, prevY - 1, 2, 3);
+        }
+    }
+
+    //! A centred row of small icons, each shown only while it applies:
+    //! phone link (crossed out when lost), alarm set, do not disturb, and
+    //! unread notifications.
+    private function drawStatusRow(dc as Dc, settings as System.DeviceSettings) as Void {
+        var icons = settings.phoneConnected ? "{" : "<";
+        if (settings.alarmCount > 0) {
+            icons += "  ^";
+        }
+        if ((settings has :doNotDisturb) && settings.doNotDisturb) {
+            icons += "  ~";
+        }
+        if (settings.notificationCount > 0) {
+            icons += "  >";
+        }
+        dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
+        dc.drawText(SCREEN_MID, BAR_Y - 1, _fontLabel, icons, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     //! Small icons either side of the bar: phone link lost (left) and

@@ -30,13 +30,19 @@ module Data {
         FIELD_RESTING_HR
     }
 
-    //! What the outer ring / bottom bar can show.  The numbers match settings.xml.
+    //! What the outer ring and bottom bar can show.  The numbers match
+    //! settings.xml.  The last two are for the bottom bar only.
     enum {
         GAUGE_OFF,
         GAUGE_STEPS,
         GAUGE_BATTERY,
-        GAUGE_ACTIVE
+        GAUGE_ACTIVE,
+        BAR_HEART_TRACE,
+        BAR_STATUS
     }
+
+    //! How far back the heart-rate trace in the bottom bar reaches.
+    const TRACE_HOURS = 4;
 
     const NO_VALUE = "--";
 
@@ -108,6 +114,72 @@ module Data {
             return 0.0;
         }
         return (value > 1.0) ? 1.0 : value;
+    }
+
+    //! Heart rate over the last TRACE_HOURS, squeezed into `columns` points,
+    //! oldest first.  Each point runs from 0.0 (the lowest reading in that
+    //! period) to 1.0 (the highest), or is -1.0 where the watch has no reading.
+    function heartTrace(columns as Number) as Array<Float> {
+        var out = new [columns] as Array<Float>;
+        for (var i = 0; i < columns; i++) {
+            out[i] = -1.0;
+        }
+        if (!(ActivityMonitor has :getHeartRateHistory)) {
+            return out;
+        }
+
+        // Average the samples that fall into each column.
+        var span = TRACE_HOURS * 3600;
+        var start = Time.now().value() - span;
+        var sums = new [columns] as Array<Number>;
+        var counts = new [columns] as Array<Number>;
+        for (var i = 0; i < columns; i++) {
+            sums[i] = 0;
+            counts[i] = 0;
+        }
+        var history = ActivityMonitor.getHeartRateHistory(new Time.Duration(span), false);
+        var sample = history.next();
+        while (sample != null) {
+            var bpm = sample.heartRate;
+            var when = sample.when;
+            if (bpm != null && bpm != ActivityMonitor.INVALID_HR_SAMPLE && when != null) {
+                var column = ((when.value() - start).toLong() * columns / span).toNumber();
+                if (column >= 0 && column < columns) {
+                    sums[column] += bpm;
+                    counts[column] += 1;
+                }
+            }
+            sample = history.next();
+        }
+
+        var low = 999.0;
+        var high = 0.0;
+        for (var i = 0; i < columns; i++) {
+            if (counts[i] > 0) {
+                var bpm = sums[i].toFloat() / counts[i];
+                out[i] = bpm;
+                low = (bpm < low) ? bpm : low;
+                high = (bpm > high) ? bpm : high;
+            }
+        }
+        if (high < low) {
+            return out; // no readings at all
+        }
+
+        // Scale to 0..1.  A quiet few hours (less than 30 bpm between lowest
+        // and highest) is not stretched to fill the height, so resting
+        // jitter stays a gentle wobble rather than looking like a workout.
+        var range = high - low;
+        if (range < 30.0) {
+            low -= (30.0 - range) / 2.0;
+            range = 30.0;
+        }
+        for (var i = 0; i < columns; i++) {
+            if (counts[i] > 0) {
+                out[i] = (out[i] - low) / range;
+            }
+        }
+        return out;
     }
 
     // ---------------------------------------------------------------------

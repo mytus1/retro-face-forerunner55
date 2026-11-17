@@ -14,7 +14,7 @@ import Toybox.WatchUi;
 //   +- Colours       -> nine parts -> list of the 8 colours
 //   +- Data fields   -> six positions -> list of field types
 //   +- Outer ring    -> list of gauges
-//   +- Bottom bar    -> list of gauges
+//   +- Bottom bar    -> heart trace, status icons or a gauge
 //   +- Seconds tick  (on/off)
 // -------------------------------------------------------------------------
 
@@ -29,7 +29,8 @@ const THEME_NAMES = [
     Rez.Strings.ThemeMono,
     Rez.Strings.ThemeDaylight,
     Rez.Strings.ThemeBlueprint,
-    Rez.Strings.ThemeSodium
+    Rez.Strings.ThemeSodium,
+    Rez.Strings.ThemeInverse
 ] as Array<ResourceId>;
 
 const COLOR_NAMES = [
@@ -108,6 +109,16 @@ const GAUGE_NAMES = [
 // to "Custom" when a colour is edited further down.
 var gThemeItem as WatchUi.MenuItem? = null;
 
+// The bottom bar has two extra choices on top of the gauges.
+const BAR_NAMES = [
+    Rez.Strings.GaugeOff,
+    Rez.Strings.GaugeSteps,
+    Rez.Strings.GaugeBattery,
+    Rez.Strings.GaugeActive,
+    Rez.Strings.BarHeartTrace,
+    Rez.Strings.BarStatus
+] as Array<ResourceId>;
+
 //! Look up a name, falling back to the first entry for out-of-range values.
 function nameAt(names as Array<ResourceId>, index as Number) as ResourceId {
     return names[(index >= 0 && index < names.size()) ? index : 0];
@@ -124,7 +135,7 @@ class SettingsMenu extends WatchUi.Menu2 {
         addItem(new WatchUi.MenuItem(Rez.Strings.ColorsTitle, null, :colors, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.FieldsTitle, null, :fields, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.RingTitle, nameAt(GAUGE_NAMES, Config.getNumber("RingMode", 1)), :ring, null));
-        addItem(new WatchUi.MenuItem(Rez.Strings.BarTitle, nameAt(GAUGE_NAMES, Config.getNumber("BarMode", 2)), :bar, null));
+        addItem(new WatchUi.MenuItem(Rez.Strings.BarTitle, nameAt(BAR_NAMES, Config.getNumber("BarMode", 4)), :bar, null));
         addItem(new WatchUi.ToggleMenuItem(Rez.Strings.SecondsTitle, null, :seconds, Config.getBool("ShowSeconds", true), null));
     }
 }
@@ -145,7 +156,7 @@ class SettingsMenuDelegate extends WatchUi.Menu2InputDelegate {
         } else if (id == :ring) {
             pushChoice(Rez.Strings.RingTitle, GAUGE_NAMES, Config.getNumber("RingMode", 1), new ChoiceDelegate("RingMode", -1, GAUGE_NAMES, item));
         } else if (id == :bar) {
-            pushChoice(Rez.Strings.BarTitle, GAUGE_NAMES, Config.getNumber("BarMode", 2), new ChoiceDelegate("BarMode", -1, GAUGE_NAMES, item));
+            pushChoice(Rez.Strings.BarTitle, BAR_NAMES, Config.getNumber("BarMode", 4), new ChoiceDelegate("BarMode", -1, BAR_NAMES, item));
         } else if (id == :seconds) {
             Config.setValue("ShowSeconds", (item as WatchUi.ToggleMenuItem).isEnabled());
         } else if (id == :colors) {

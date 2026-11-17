@@ -29,7 +29,7 @@
         <property id="FieldBottomCenter" type="number">2</property>
         <property id="FieldBottomRight" type="number">3</property>
         <property id="RingMode" type="number">1</property>
-        <property id="BarMode" type="number">2</property>
+        <property id="BarMode" type="number">4</property>
         <property id="ShowSeconds" type="boolean">true</property>
     </properties>
 
@@ -46,6 +46,7 @@
                 <listEntry value="7">@Strings.ThemeDaylight</listEntry>
                 <listEntry value="8">@Strings.ThemeBlueprint</listEntry>
                 <listEntry value="9">@Strings.ThemeSodium</listEntry>
+                <listEntry value="10">@Strings.ThemeInverse</listEntry>
             </settingConfig>
         </setting>
         <setting propertyKey="@Properties.NumeralStyle" title="@Strings.PhoneStyle">
@@ -290,6 +291,8 @@
                 <listEntry value="1">@Strings.GaugeSteps</listEntry>
                 <listEntry value="2">@Strings.GaugeBattery</listEntry>
                 <listEntry value="3">@Strings.GaugeActive</listEntry>
+                <listEntry value="4">@Strings.BarHeartTrace</listEntry>
+                <listEntry value="5">@Strings.BarStatus</listEntry>
             </settingConfig>
         </setting>
         <setting propertyKey="@Properties.ShowSeconds" title="@Strings.PhoneSeconds">

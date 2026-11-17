@@ -8,7 +8,7 @@ A big video-recorder clock, six data fields, two gauges, and nothing else.
 Every part of it can be recoloured, either from a list of themes or one piece
 at a time.
 
-![The nine built-in themes](docs/themes.png)
+![The ten built-in themes](docs/themes.png)
 
 The numerals come in two styles you can switch between on the watch: **VHS**
 (chunky, stair-stepped, like a tape deck's on-screen clock) and **Squared**
@@ -24,11 +24,11 @@ The numerals come in two styles you can switch between on the watch: **VHS**
       STEPS |  KM  | KCAL
        8421 | 6.47 | 1840       three data fields
      ----------------------
-            19:53               time (follows the watch's 12/24 h setting)
+            13:37               time (follows the watch's 12/24 h setting)
      ----------------------
         17° |  62  | 76%        three more data fields
        TEMP | BPM  | BATT
-          ||||||||..            bottom bar   battery level, in tenths
+         _/\__/\_.             bottom bar   your heart rate over the last 4 hours
 ```
 
 - **Data fields** – each of the six can show any of these, or be left empty:
@@ -53,13 +53,18 @@ The numerals come in two styles you can switch between on the watch: **VHS**
   Temperature, rain, wind and sunrise/sunset come from the weather report the
   watch receives from your phone, for wherever the phone is. They show `--`
   until the watch has synced with Garmin Connect.
-- **Outer ring** and **bottom bar** – each can show step goal, battery,
-  weekly intensity-minute goal, or nothing.
+- **Bottom bar** – by default a small trace of your heart rate over the last
+  four hours, like a bedside monitor, with a dot on the latest reading. It can
+  instead show **status icons** (phone connected or lost, alarm set,
+  do-not-disturb, unread messages – each only while it applies), or a gauge.
+- **Outer ring** – shows step goal by default; can also show battery, weekly
+  intensity-minute goal, or nothing.
 - **Seconds tick** – for the few seconds after you raise your wrist, a bright
   tick runs round the ring. (The watch only redraws once a minute the rest of
   the time, which is what keeps the battery life.)
-- **Status icons** – a small icon appears left of the bar if the phone
-  connection drops, and right of it when you have unread notifications.
+- **Side icons** – when the bottom bar shows a trace or gauge, a small icon
+  appears left of it if the phone connection drops, and right of it when you
+  have unread notifications.
 
 ## Install it
 
@@ -85,12 +90,12 @@ Hold **UP** → **Watch Face** → highlight **Apogee** → **START** →
 
 | Menu           | What it does                                                          |
 | -------------- | --------------------------------------------------------------------- |
-| **Theme**      | Pick one of the nine built-in colour schemes, or *Custom*.            |
+| **Theme**      | Pick one of the ten built-in colour schemes, or *Custom*.             |
 | **Numerals**   | Switch the numeral style between *VHS* and *Squared*.                 |
 | **Colours**    | Set the colour of one part: background, hours, minutes, date, data values, data labels, lines, ring ticks, accent. |
 | **Data fields**| Choose what each of the six fields shows.                             |
 | **Outer ring** | Choose what the ring measures.                                        |
-| **Bottom bar** | Choose what the bar measures.                                         |
+| **Bottom bar** | Heart trace, status icons, or a gauge (step goal, battery, intensity goal). |
 | **Seconds tick** | Turn the wrist-raise seconds tick on or off.                        |
 
 Changing a single colour while a theme is active copies that theme into

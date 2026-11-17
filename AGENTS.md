@@ -18,7 +18,9 @@ Working and feature-complete for a first version.
 Verified in Garmin's simulator (SDK 9.3.0, device `fr55`, CIQ 3.4.2):
 
 - compiles with no warnings at the strictest type-check level (`-l 3`)
-- all nine themes render in the six-field layout, in both numeral styles
+- all ten themes render in the six-field layout, in both numeral styles
+- bottom bar: heart-rate trace (real simulator history and synthetic), status
+  icon row with every icon forced on, and the older gauges
 - every data field type renders with live simulator data (weather fields that
   need a location show "--" there, as designed)
 - the widest values each column can receive stay clear of the tick ring
@@ -117,6 +119,9 @@ activity numbers temporarily hard-coded in a throwaway copy of the source.
 ## Ideas not done
 
 - Always-on seconds via `onPartialUpdate` (deliberately skipped: battery).
+- Aesthetic ideas offered to the owner, not yet chosen: CRT scanlines through
+  the time numerals, HUD corner brackets on the dividers, a blinking colon
+  while awake, a cleaner ring (no minute dots), a 'PLAY >' style VHS tag.
 - More data fields: alarms, do-not-disturb (glyphs `^` and `~` already exist
   in the label font), second time zone, humidity, feels-like temperature.
   Body battery and stress are not exposed to Connect IQ on this watch.

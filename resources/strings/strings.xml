@@ -50,6 +50,7 @@
     <string id="ThemeDaylight">Daylight</string>
     <string id="ThemeBlueprint">Blueprint</string>
     <string id="ThemeSodium">Sodium</string>
+    <string id="ThemeInverse">Inverted mono</string>
 
     <!-- Colourable parts -->
     <string id="ColorBackground">Background</string>
@@ -102,4 +103,6 @@
     <string id="GaugeSteps">Step goal</string>
     <string id="GaugeBattery">Battery</string>
     <string id="GaugeActive">Intensity goal</string>
+    <string id="BarHeartTrace">Heart trace</string>
+    <string id="BarStatus">Status icons</string>
 </strings>

@@ -70,7 +70,8 @@ module Config {
         [K, W, W, W, W, W, W, W, W], // 6 Mono
         [W, K, K, R, K, R, K, K, R], // 7 Daylight
         [B, W, W, Y, W, C, C, W, Y], // 8 Blueprint
-        [K, Y, Y, W, W, Y, Y, Y, W]  // 9 Sodium
+        [K, Y, Y, W, W, Y, Y, Y, W], // 9 Sodium
+        [W, K, K, K, K, K, K, K, K]  // 10 Inverted mono
     ] as Array<Array<Number> >;
 
     // ---------------------------------------------------------------------

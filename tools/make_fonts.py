@@ -476,6 +476,16 @@ LABEL = {
         "..##...#.",
         "..#...#.#",
     ],
+    # "{"  phone connected: bluetooth rune
+    "{": [
+        "..#..",
+        "..##.",
+        "#.#.#",
+        ".###.",
+        "#.#.#",
+        "..##.",
+        "..#..",
+    ],
     # ">"  unread notifications: envelope
     ">": [
         ".........",
@@ -593,7 +603,7 @@ def build():
     fonts["apogee_label"] = write_font("apogee_label", label_glyphs, 1, 7)
 
     # A heavier cut of the same alphabet, used for the date line.
-    bold_glyphs = [(c, embolden(g)) for c, g in label_glyphs if c not in "<>*^~"]
+    bold_glyphs = [(c, embolden(g)) for c, g in label_glyphs if c not in "<>*^~{"]
     fonts["apogee_label_bold"] = write_font("apogee_label_bold", bold_glyphs, 1, 7)
     return fonts
 
