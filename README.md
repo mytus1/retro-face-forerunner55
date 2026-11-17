@@ -57,8 +57,9 @@ The numerals come in two styles you can switch between on the watch: **VHS**
   four hours, like a bedside monitor, with a dot on the latest reading. It can
   instead show **status icons** (phone connected or lost, alarm set,
   do-not-disturb, unread messages – each only while it applies), or a gauge.
-- **Scanlines** – thin dark lines run through the time like an old CRT
-  screen. Switch them off under *Customize → Scanlines*.
+- **Scanlines** (off by default) – thin dark lines run through the time
+  like an old CRT screen; the colon is left solid. Switch them on under
+  *Customize → Scanlines*.
 - **Blinking colon** – for the few seconds after you raise your wrist, the
   colon blinks once a second like a tape deck's clock.
 - **Outer ring** – twelve hour marks, plus a lit tick for every 1/60th of
@@ -70,6 +71,9 @@ The numerals come in two styles you can switch between on the watch: **VHS**
 - **Side icons** – when the bottom bar shows a trace or gauge, a small icon
   appears left of it if the phone connection drops, and right of it when you
   have unread notifications.
+- **Low battery** – at 15% or below, a red battery icon appears beside the
+  bottom bar (in place of the notifications icon), and a Battery field, if
+  you show one, turns red. In *status icons* mode the battery leads the row.
 
 ## Install it
 

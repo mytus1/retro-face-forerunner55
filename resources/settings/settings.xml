@@ -31,7 +31,7 @@
         <property id="RingMode" type="number">1</property>
         <property id="BarMode" type="number">4</property>
         <property id="ShowSeconds" type="boolean">true</property>
-        <property id="Scanlines" type="boolean">true</property>
+        <property id="Scanlines" type="boolean">false</property>
     </properties>
 
     <settings>

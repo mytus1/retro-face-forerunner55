@@ -24,6 +24,8 @@ Verified in Garmin's simulator (SDK 9.3.0, device `fr55`, CIQ 3.4.2):
 - every data field type renders with live simulator data (weather fields that
   need a location show "--" there, as designed)
 - the widest values each column can receive stay clear of the tick ring
+- low battery (forced to 9%): red Battery value, red battery icon beside the
+  trace, and leading the status icon row
 - 24 h and 12 h modes; empty field slots; status icons
 - the on-watch settings menu: every level opens, choices are stored and applied
 - `dist/Apogee.prg` (the release build that is committed) loads and runs
@@ -37,6 +39,31 @@ If the owner reports back on these, update the README.
 
 Phone-side settings (`resources/settings/settings.xml`) compile but can only be
 exercised after a Connect IQ Store upload, so they are untested.
+
+## Code notes
+
+- `Data.Snapshot` holds the activity info, device settings, battery and
+  weather report. `ApogeeView.onUpdate` refreshes it once per redraw (weather
+  once a minute) and every field and gauge reads from it - do not call
+  `ActivityMonitor.getInfo()` or `Weather.getCurrentConditions()` per field.
+- Warnings use `warningColor()`: red, unless the background is red.
+
+## Performance notes (measured in the simulator, 17 Nov 2026)
+
+Timings are from the simulator on a PC, so only the proportions mean
+anything. The watchdog limit is 120,000 instructions per redraw.
+
+| Part of a redraw              | Time      |
+| ----------------------------- | --------- |
+| `Data.heartTrace` (240 samples) | ~3.7 ms; 5 calls in one redraw trip the watchdog |
+| `drawTrace` (cached points)   | ~0.7 ms   |
+| six data fields               | ~0.25 ms  |
+| time                          | ~0.2 ms   |
+| ring                          | ~0.15 ms  |
+| weather / settings / activity reads | below 1 ms for 20 calls |
+
+Memory: 35.7 KB of 91.8 KB. The compiler's default is already its highest
+optimisation level (`-O 2` and `-O 3` produce identical output).
 
 ## Hard constraints of the device
 
@@ -120,7 +147,7 @@ activity numbers temporarily hard-coded in a throwaway copy of the source.
 
 - Always-on seconds via `onPartialUpdate` (deliberately skipped: battery).
 - A 'PLAY >' style VHS tag was offered as a toggle and not chosen. Scanlines
-  (setting `Scanlines`), corner brackets, a blinking colon while awake and a
+  (setting `Scanlines`, off by default), corner brackets, a blinking colon while awake and a
   ring without minute dots were chosen and are in.
 - More data fields: alarms, do-not-disturb (glyphs `^` and `~` already exist
   in the label font), second time zone, humidity, feels-like temperature.

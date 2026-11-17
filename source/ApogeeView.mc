@@ -1,3 +1,4 @@
+import Toybox.ActivityMonitor;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
@@ -5,6 +6,7 @@ import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
 import Toybox.WatchUi;
+import Toybox.Weather;
 
 // -------------------------------------------------------------------------
 // Layout, in pixels, for the Forerunner 55's 208 x 208 round screen.
@@ -50,6 +52,7 @@ const TIME_DIGIT_STEP = 38;      // numeral width (32) + gap (6)
 const TIME_COLON_STEP = 14;      // colon width (8) + gap (6)
 const TIME_GAP = 6;
 const TIME_HEIGHT = 56;
+const TIME_COLON_W = 8;          // the colon's own width, kept clear of scanlines
 const SCANLINE_STEP = 4;         // every 4th pixel row of the time is left dark
 
 const BAR_Y = 184;               // bottom bar: 10 segments
@@ -57,6 +60,9 @@ const BAR_X = 80;
 const BAR_SEGMENT_W = 3;
 const BAR_SEGMENT_H = 6;
 const BAR_SEGMENT_STEP = 5;
+
+const ICON_LEFT_X = 64;          // status icons either side of the bar or trace
+const ICON_RIGHT_X = 135;
 
 const TRACE_X = 77;              // bottom bar as a heart-rate trace
 const TRACE_Y = 177;
@@ -91,7 +97,12 @@ class ApogeeView extends WatchUi.WatchFace {
     private var _ringMode as Number = Data.GAUGE_STEPS;
     private var _barMode as Number = Data.GAUGE_BATTERY;
     private var _showSeconds as Boolean = true;
-    private var _scanlines as Boolean = true;
+    private var _scanlines as Boolean = false;
+
+    // Activity, settings and battery, read once per redraw.  The weather
+    // report inside it is only re-read once a minute.
+    private var _snap as Data.Snapshot;
+    private var _weatherMinute as Number = -1;
 
     // The heart-rate trace is worked out once a minute, not on every redraw.
     private var _trace as Array<Float>?;
@@ -120,6 +131,7 @@ class ApogeeView extends WatchUi.WatchFace {
 
         _colors = Config.colors();
         _fields = [0, 0, 0, 0, 0, 0] as Array<Number>;
+        _snap = new Data.Snapshot();
         loadSettings();
     }
 
@@ -152,8 +164,9 @@ class ApogeeView extends WatchUi.WatchFace {
         _ringMode = Config.getNumber("RingMode", Data.GAUGE_STEPS);
         _barMode = Config.getNumber("BarMode", Data.BAR_HEART_TRACE);
         _traceMinute = -1;
+        _weatherMinute = -1;
         _showSeconds = Config.getBool("ShowSeconds", true);
-        _scanlines = Config.getBool("Scanlines", true);
+        _scanlines = Config.getBool("Scanlines", false);
     }
 
     //! Called when the face comes back on screen, e.g. after the settings menu.
@@ -175,6 +188,13 @@ class ApogeeView extends WatchUi.WatchFace {
     function onUpdate(dc as Dc) as Void {
         var clock = System.getClockTime();
         var settings = System.getDeviceSettings();
+        _snap.info = ActivityMonitor.getInfo();
+        _snap.settings = settings;
+        _snap.battery = System.getSystemStats().battery;
+        if (clock.min != _weatherMinute) {
+            _snap.weather = (Toybox has :Weather) ? Weather.getCurrentConditions() : null;
+            _weatherMinute = clock.min;
+        }
 
         dc.setColor(_colors[Config.PART_BACKGROUND], _colors[Config.PART_BACKGROUND]);
         dc.clear();
@@ -204,7 +224,7 @@ class ApogeeView extends WatchUi.WatchFace {
     //! the ring gauge; past them only the twelve hour marks are drawn.
     //! second: 0-59 to show the seconds marker, or -1 to hide it.
     private function drawRing(dc as Dc, second as Number) as Void {
-        var lit = (Data.gauge(_ringMode) * 60 + 0.5).toNumber();
+        var lit = (Data.gauge(_ringMode, _snap) * 60 + 0.5).toNumber();
 
         dc.setPenWidth(2);
         dc.setColor(_colors[Config.PART_ACCENT], Graphics.COLOR_TRANSPARENT);
@@ -299,10 +319,11 @@ class ApogeeView extends WatchUi.WatchFace {
         if (type == Data.FIELD_NONE) {
             return;
         }
-        var content = Data.field(type, wide);
+        var content = Data.field(type, wide, _snap);
         dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, labelY, _fontLabel, content[0], Graphics.TEXT_JUSTIFY_CENTER);
-        dc.setColor(_colors[Config.PART_VALUES], Graphics.COLOR_TRANSPARENT);
+        var low = (type == Data.FIELD_BATTERY && _snap.batteryLow());
+        dc.setColor(low ? warningColor() : _colors[Config.PART_VALUES], Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, valueY, _fontData, content[1], Graphics.TEXT_JUSTIFY_CENTER);
     }
 
@@ -332,6 +353,7 @@ class ApogeeView extends WatchUi.WatchFace {
         dc.setColor(_colors[Config.PART_HOURS], Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, TIME_Y, _fontTime, hours, Graphics.TEXT_JUSTIFY_LEFT);
         x += hours.length() * TIME_DIGIT_STEP;
+        var colonX = x;
 
         if (!_awake || clock.sec % 2 == 0) {
             dc.setColor(_colors[Config.PART_ACCENT], Graphics.COLOR_TRANSPARENT);
@@ -342,10 +364,15 @@ class ApogeeView extends WatchUi.WatchFace {
         dc.setColor(_colors[Config.PART_MINUTES], Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, TIME_Y, _fontTime, minutes, Graphics.TEXT_JUSTIFY_LEFT);
 
+        // Scanlines cut through the numerals but not the colon, which stays
+        // a solid pair of dots.
         if (_scanlines) {
+            var afterColon = colonX + TIME_COLON_W;
+            var right = left + width;
             dc.setColor(_colors[Config.PART_BACKGROUND], Graphics.COLOR_TRANSPARENT);
             for (var y = TIME_Y + SCANLINE_STEP - 1; y < TIME_Y + TIME_HEIGHT; y += SCANLINE_STEP) {
-                dc.fillRectangle(left, y, width, 1);
+                dc.fillRectangle(left, y, colonX - left, 1);
+                dc.fillRectangle(afterColon, y, right - afterColon, 1);
             }
         }
     }
@@ -359,12 +386,11 @@ class ApogeeView extends WatchUi.WatchFace {
         if (_barMode == Data.GAUGE_OFF) {
             return;
         }
-        var level = Data.gauge(_barMode);
+        var level = Data.gauge(_barMode, _snap);
         var full = (level * 10 + 0.99).toNumber();
         var color = _colors[Config.PART_ACCENT];
-        // A battery that is nearly flat turns red (unless red would be invisible).
-        if (_barMode == Data.GAUGE_BATTERY && level <= 0.15 && _colors[Config.PART_BACKGROUND] != Graphics.COLOR_RED) {
-            color = Graphics.COLOR_RED;
+        if (_barMode == Data.GAUGE_BATTERY && _snap.batteryLow()) {
+            color = warningColor();
         }
         dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         for (var i = 0; i < 10; i++) {
@@ -416,8 +442,8 @@ class ApogeeView extends WatchUi.WatchFace {
     }
 
     //! A centred row of small icons, each shown only while it applies:
-    //! phone link (crossed out when lost), alarm set, do not disturb, and
-    //! unread notifications.
+    //! battery low (in red), phone link (crossed out when lost), alarm set,
+    //! do not disturb, and unread notifications.
     private function drawStatusRow(dc as Dc, settings as System.DeviceSettings) as Void {
         var icons = settings.phoneConnected ? "{" : "<";
         if (settings.alarmCount > 0) {
@@ -429,19 +455,46 @@ class ApogeeView extends WatchUi.WatchFace {
         if (settings.notificationCount > 0) {
             icons += "  >";
         }
+        var x = SCREEN_MID;
+        if (_snap.batteryLow()) {
+            // The battery icon goes first, in its own colour, so centre the
+            // row as a whole.
+            var battery = "|  ";
+            var batteryWidth = dc.getTextWidthInPixels(battery, _fontLabel);
+            x = SCREEN_MID - (batteryWidth + dc.getTextWidthInPixels(icons, _fontLabel)) / 2;
+            dc.setColor(warningColor(), Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, BAR_Y - 1, _fontLabel, battery, Graphics.TEXT_JUSTIFY_LEFT);
+            x += batteryWidth;
+            dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
+            dc.drawText(x, BAR_Y - 1, _fontLabel, icons, Graphics.TEXT_JUSTIFY_LEFT);
+            return;
+        }
         dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
-        dc.drawText(SCREEN_MID, BAR_Y - 1, _fontLabel, icons, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(x, BAR_Y - 1, _fontLabel, icons, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
-    //! Small icons either side of the bar: phone link lost (left) and
-    //! unread notifications (right).  Nothing is drawn when all is well.
+    //! Small icons either side of the bar: phone link lost on the left; on
+    //! the right a red battery when it is low, otherwise unread
+    //! notifications.  Nothing is drawn when all is well.
     private function drawStatus(dc as Dc, settings as System.DeviceSettings) as Void {
         dc.setColor(_colors[Config.PART_LABELS], Graphics.COLOR_TRANSPARENT);
         if (!settings.phoneConnected) {
-            dc.drawText(BAR_X - 14, BAR_Y - 1, _fontLabel, "<", Graphics.TEXT_JUSTIFY_LEFT);
+            dc.drawText(ICON_LEFT_X, BAR_Y - 1, _fontLabel, "<", Graphics.TEXT_JUSTIFY_LEFT);
         }
-        if (settings.notificationCount > 0) {
-            dc.drawText(BAR_X + 53, BAR_Y - 1, _fontLabel, ">", Graphics.TEXT_JUSTIFY_LEFT);
+        if (_snap.batteryLow()) {
+            dc.setColor(warningColor(), Graphics.COLOR_TRANSPARENT);
+            dc.drawText(ICON_RIGHT_X, BAR_Y - 1, _fontLabel, "|", Graphics.TEXT_JUSTIFY_LEFT);
+        } else if (settings.notificationCount > 0) {
+            dc.drawText(ICON_RIGHT_X, BAR_Y - 1, _fontLabel, ">", Graphics.TEXT_JUSTIFY_LEFT);
         }
+    }
+
+    //! Red, for warnings - unless the background is red, when red would be
+    //! invisible and the data-value colour is used instead.
+    private function warningColor() as Number {
+        if (_colors[Config.PART_BACKGROUND] == Graphics.COLOR_RED) {
+            return _colors[Config.PART_VALUES];
+        }
+        return Graphics.COLOR_RED;
     }
 }

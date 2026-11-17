@@ -138,7 +138,7 @@ class SettingsMenu extends WatchUi.Menu2 {
         addItem(new WatchUi.MenuItem(Rez.Strings.RingTitle, nameAt(GAUGE_NAMES, Config.getNumber("RingMode", 1)), :ring, null));
         addItem(new WatchUi.MenuItem(Rez.Strings.BarTitle, nameAt(BAR_NAMES, Config.getNumber("BarMode", 4)), :bar, null));
         addItem(new WatchUi.ToggleMenuItem(Rez.Strings.SecondsTitle, null, :seconds, Config.getBool("ShowSeconds", true), null));
-        addItem(new WatchUi.ToggleMenuItem(Rez.Strings.ScanTitle, null, :scan, Config.getBool("Scanlines", true), null));
+        addItem(new WatchUi.ToggleMenuItem(Rez.Strings.ScanTitle, null, :scan, Config.getBool("Scanlines", false), null));
     }
 }
 

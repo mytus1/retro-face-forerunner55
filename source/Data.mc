@@ -46,15 +46,38 @@ module Data {
 
     const NO_VALUE = "--";
 
+    //! At or below this charge (percent) the battery is shown in red.
+    const LOW_BATTERY = 15.0;
+
+    //! Everything the fields and gauges read, fetched once per redraw rather
+    //! than once per field.  ApogeeView keeps one and refreshes it.
+    class Snapshot {
+        var info as ActivityMonitor.Info;
+        var settings as System.DeviceSettings;
+        var battery as Float;                          // percent, 0-100
+        var weather as Weather.CurrentConditions or Null;
+
+        function initialize() {
+            info = ActivityMonitor.getInfo();
+            settings = System.getDeviceSettings();
+            battery = System.getSystemStats().battery;
+            weather = null;
+        }
+
+        function batteryLow() as Boolean {
+            return battery <= LOW_BATTERY;
+        }
+    }
+
     //! Label and value for one data field, e.g. ["STEPS", "8421"].
     //!
     //! Labels are at most five characters and values at most four numerals
     //! wide, because that is all the outer columns have room for.  The middle
     //! column is wider: pass wide = true and big counts are shown in full
     //! instead of as "12.4K".
-    function field(type as Number, wide as Boolean) as Array<String> {
-        var info = ActivityMonitor.getInfo();
-        var settings = System.getDeviceSettings();
+    function field(type as Number, wide as Boolean, snap as Snapshot) as Array<String> {
+        var info = snap.info;
+        var settings = snap.settings;
 
         if (type == FIELD_STEPS) {
             return ["STEPS", count(info.steps, wide)];
@@ -63,7 +86,7 @@ module Data {
             return ["BPM", count(heartRate(), wide)];
         }
         if (type == FIELD_BATTERY) {
-            return ["BATT", (System.getSystemStats().battery + 0.5).toNumber().format("%d") + "%"];
+            return ["BATT", (snap.battery + 0.5).toNumber().format("%d") + "%"];
         }
         if (type == FIELD_DISTANCE) {
             var metric = settings.distanceUnits != System.UNIT_STATUTE;
@@ -92,21 +115,20 @@ module Data {
             return ["REST", count((profile has :restingHeartRate) ? profile.restingHeartRate : null, wide)];
         }
         if (type == FIELD_TEMP || type == FIELD_RAIN || type == FIELD_WIND || type == FIELD_SUN) {
-            return weather(type, settings);
+            return weather(type, settings, snap.weather);
         }
         return ["", ""];
     }
 
     //! How full a gauge is, from 0.0 to 1.0.
-    function gauge(mode as Number) as Float {
+    function gauge(mode as Number, snap as Snapshot) as Float {
         var value = 0.0;
+        var info = snap.info;
         if (mode == GAUGE_BATTERY) {
-            value = System.getSystemStats().battery / 100.0;
+            value = snap.battery / 100.0;
         } else if (mode == GAUGE_STEPS) {
-            var info = ActivityMonitor.getInfo();
             value = ratio(info.steps, info.stepGoal);
         } else if (mode == GAUGE_ACTIVE) {
-            var info = ActivityMonitor.getInfo();
             var active = info.activeMinutesWeek;
             value = ratio(active != null ? active.total : null, info.activeMinutesWeekGoal);
         }
@@ -233,8 +255,8 @@ module Data {
     //! The fields that come from the watch's weather report.  The watch gets
     //! that from your phone, for wherever the phone is, so these show "--"
     //! until the two have synced.
-    function weather(type as Number, settings as System.DeviceSettings) as Array<String> {
-        var report = (Toybox has :Weather) ? Weather.getCurrentConditions() : null;
+    //! report: the watch's current weather report, or null if it has none.
+    function weather(type as Number, settings as System.DeviceSettings, report as Weather.CurrentConditions or Null) as Array<String> {
 
         if (type == FIELD_TEMP) {
             var celsius = (report != null) ? report.temperature : null;
