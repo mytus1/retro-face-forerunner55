@@ -137,6 +137,13 @@ CIQ_SDK=/path/to/connectiq-sdk CIQ_KEY=/path/to/developer_key.der tools/build.sh
 CIQ_SDK=/path/to/connectiq-sdk CIQ_KEY=/path/to/developer_key.der tools/build.sh store
 ```
 
+`tools/build.sh beta` builds `bin/Apogee-beta.iq` from `beta.jungle` /
+`manifest-beta.xml`, which differ from the main ones only in the app id
+(Garmin requires a separate id for beta uploads). **Any change to
+`manifest.xml` (products, permissions, languages) must be made in
+`manifest-beta.xml` too.** The owner installs through the iPhone Connect IQ
+app, so `dist/Apogee-beta.iq` is the file that matters most to them.
+
 The first writes `bin/Apogee.prg`, the second `bin/Apogee.iq`. Copy them to
 `dist/` when cutting a release. The developer key is deliberately **not** in
 the repository (see `.gitignore`); the owner holds the one that signed the

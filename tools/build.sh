@@ -3,7 +3,9 @@
 # the same thing with a click - see the README).
 #
 #   tools/build.sh          -> bin/Apogee.prg   copy this to GARMIN/APPS on the watch
-#   tools/build.sh store    -> bin/Apogee.iq    upload this to the Connect IQ Store
+#   tools/build.sh store    -> bin/Apogee.iq    for a public Connect IQ Store listing
+#   tools/build.sh beta     -> bin/Apogee-beta.iq  for a private beta listing
+#                              (manifest-beta.xml: same app, separate app id)
 #
 # Needs two environment variables:
 #   CIQ_SDK   folder of the Connect IQ SDK (the one containing bin/monkeybrains.jar)
@@ -15,7 +17,10 @@ cd "$(dirname "$0")/.."
 : "${CIQ_KEY:?Set CIQ_KEY to your developer key (.der)}"
 
 mkdir -p bin
-if [ "${1:-}" = "store" ]; then
+if [ "${1:-}" = "beta" ]; then
+    java -jar "$CIQ_SDK/bin/monkeybrains.jar" -o bin/Apogee-beta.iq -f beta.jungle -y "$CIQ_KEY" -e -r -w
+    echo "Built bin/Apogee-beta.iq"
+elif [ "${1:-}" = "store" ]; then
     java -jar "$CIQ_SDK/bin/monkeybrains.jar" -o bin/Apogee.iq -f monkey.jungle -y "$CIQ_KEY" -e -r -w
     echo "Built bin/Apogee.iq"
 else

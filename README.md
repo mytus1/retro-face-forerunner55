@@ -78,18 +78,58 @@ The numerals come in two styles you can switch between on the watch: **VHS**
 
 ## Install it
 
-You need the file [`dist/Apogee.prg`](dist/Apogee.prg) and the watch's USB
-cable. No account, no publishing.
+There are two ways. An iPhone can't install a watch face file by itself: the
+Connect IQ app only installs from Garmin's store, so the phone route goes
+through a **private beta** listing that only your Garmin account can see.
 
-1. Plug the Forerunner 55 into a computer. It shows up as a drive called
-   **GARMIN**. (On a Mac, if it doesn't appear in Finder, install
-   [OpenMTP](https://openmtp.ganeshrvel.com/) and use that to browse it.)
-2. Copy `Apogee.prg` into the **`GARMIN/APPS`** folder.
-3. Eject the drive and unplug the watch.
-4. On the watch: hold **UP** → **Watch Face** → scroll to **Apogee** →
-   press **START** → **Apply**.
+### Through the Connect IQ app on your phone (no cable)
 
-To update later, copy a newer `Apogee.prg` over the old one.
+You need [`dist/Apogee-beta.iq`](dist/Apogee-beta.iq) and the Garmin account
+your watch is paired with. The upload is easiest from a computer's browser,
+but Safari on the iPhone works too if the file is saved in the Files app.
+
+1. Go to <https://apps.garmin.com/developer> and sign in with that Garmin
+   account. The first time, accept the Connect IQ developer agreement.
+2. Choose to upload a new app and select `Apogee-beta.iq`.
+3. Tick **Beta App**. Give it a title (Apogee) and a short description, and
+   use [`docs/preview.png`](docs/preview.png) wherever it asks for images.
+   Submit.
+4. Find Apogee in your list of uploaded apps on the developer site and open
+   its store page **on your iPhone** (email or message yourself the link, for
+   example). It opens in the Connect IQ app: tap **Install**.
+5. Keep the watch near the phone while it syncs. Then on the watch: hold
+   **UP** → **Watch Face** → scroll to **Apogee** → **START** → **Apply**.
+
+Settings are then also available on the phone, under **Connect IQ app → My
+Device → Watch Faces → Apogee → Settings**.
+
+To update: upload the newer `Apogee-beta.iq` to the same listing on the
+developer site; the phone installs the update on its next sync. Garmin only
+accepts an update signed with the same developer key as the first upload, so
+keep that `developer_key.der` file safe.
+
+### With the charging cable and a computer (quickest)
+
+You need [`dist/Apogee.prg`](dist/Apogee.prg). No account, no upload.
+
+1. Close Garmin Express if it is installed (it takes over the watch).
+2. Plug the Forerunner 55 into the computer. On Windows it appears in File
+   Explorer as **GARMIN** or **Forerunner 55**. On a Mac it may not show in
+   Finder; if not, install the free [OpenMTP](https://openmtp.ganeshrvel.com/)
+   and browse the watch with that.
+3. Copy `Apogee.prg` into the **`GARMIN/APPS`** folder (on some watches,
+   **`Internal Storage/GARMIN/Apps`**).
+4. Eject and unplug. On the watch: hold **UP** → **Watch Face** → scroll to
+   **Apogee** → **START** → **Apply**.
+
+To update, copy a newer `Apogee.prg` over the old one. A face installed this
+way has no settings screen on the phone, but the on-watch menu below has every
+option.
+
+**Use one route or the other, not both.** The two builds have different app
+IDs (Garmin requires a separate one for beta uploads), so with both installed
+you'd see two faces called Apogee. To switch, delete the other one: on the
+watch under **Watch Face**, or `APPS/Apogee.prg` over USB.
 
 ## Change the colours and fields
 
@@ -116,26 +156,11 @@ scratch.
 The Forerunner 55's screen can show exactly eight colours – black, white, red,
 yellow, green, cyan, blue, magenta – so those are the choices everywhere.
 
-### On your phone (optional)
+### On your phone
 
-Garmin only offers a phone settings screen for faces installed through the
-Connect IQ Store, not for ones copied over USB. If you'd like that, you can
-upload Apogee as a **private beta** that only your own Garmin account can see:
-
-1. Go to <https://apps.garmin.com/developer> and sign in with the Garmin
-   account your watch uses. Accept the developer agreement.
-2. Choose **Upload an App** and select [`dist/Apogee.iq`](dist/Apogee.iq).
-3. Fill in a title and description, use `docs/preview.png` where it asks for
-   images, and tick **Beta App**. Beta apps skip review and stay private.
-4. Delete `Apogee.prg` from `GARMIN/APPS` if you side-loaded it earlier (two
-   copies of the same face confuse the watch).
-5. On your phone, open the **Connect IQ** app, find Apogee under your account
-   and install it, then let the watch sync.
-6. Settings are then under **Connect IQ app → My Device → My Watch Faces →
-   Apogee → Settings**.
-
-Keep the developer key that signed `Apogee.iq` somewhere safe: Garmin only
-accepts updates to a store listing if they are signed with the same key.
+Only for the Connect IQ app route above: **Connect IQ app → My Device →
+Watch Faces → Apogee → Settings** has the same options as the watch menu,
+plus a custom colour for every part in one list.
 
 ## Make it your own
 
@@ -185,6 +210,8 @@ Prefer a terminal? `tools/build.sh` does the same two builds.
 
 ```
 manifest.xml                  app id, type (watch face), supported device
+manifest-beta.xml             the same, with the separate app id used for beta uploads
+beta.jungle                   build configuration for the beta package
 monkey.jungle                 build configuration
 source/
   ApogeeApp.mc                entry point
@@ -203,5 +230,6 @@ tools/
   build.sh                    command-line build
 dist/
   Apogee.prg                  ready to copy to the watch
-  Apogee.iq                   ready to upload to the Connect IQ Store
+  Apogee.iq                   for a public Connect IQ Store listing
+  Apogee-beta.iq              for a private beta listing (separate app id)
 ```
